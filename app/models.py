@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 CONTENT_TYPES = ('video', 'meet', 'pdf')
 COURSE_TAGS   = ('general', 'computer', 'ai', 'forex')
@@ -75,6 +76,29 @@ class Project(db.Model):
             'image_url': self.image_url,
             'start_date': self.start_date.isoformat() if self.start_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
+        }
+
+class Admin(db.Model):
+    """Administrator accounts"""
+    __tablename__ = 'admin'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    is_superuser = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'is_superuser': self.is_superuser,
         }
 
 

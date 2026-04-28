@@ -42,6 +42,17 @@ def create_app(config_name='development'):
         except Exception as e:
             print(f"Database initialization error (non-fatal): {e}")
 
+        # Seed default superuser admin account if no admins exist yet
+        from app.models import Admin
+        if Admin.query.count() == 0:
+            default_admin = Admin(
+                email=app.config.get('ADMIN_EMAIL', 'joseyusuf0@gmail.com').strip().lower(),
+                is_superuser=True,
+            )
+            default_admin.set_password(app.config.get('ADMIN_PASSWORD', 'admin@1234'))
+            db.session.add(default_admin)
+            db.session.commit()
+
     # Load site content once and inject into every template context
     site_content = _load_content(app)
 

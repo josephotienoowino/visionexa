@@ -6,7 +6,8 @@ _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 class Config:
     """Base configuration"""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') or 'admin123'
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL') or 'joseyusuf0@gmail.com'
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') or 'admin@1234'
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')

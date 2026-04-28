@@ -8,7 +8,7 @@ from flask_mail import Message
 from werkzeug.utils import secure_filename
 
 from app import db, mail
-from app.models import Profile, Skill, Project, Content, COURSE_TAGS
+from app.models import Profile, Skill, Project, Content, COURSE_TAGS, Admin
 
 # ── Blueprints ────────────────────────────────────────────────────────────────
 main_bp    = Blueprint('main',    __name__)
@@ -20,6 +20,18 @@ learn_bp   = Blueprint('learn',   __name__, url_prefix='/learn')
 def _admin_required():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
+
+def _current_admin():
+    admin_id = session.get('admin_id')
+    if admin_id:
+        return Admin.query.get(admin_id)
+    return None
+
+def _superuser_required():
+    admin = _current_admin()
+    if not admin or not admin.is_superuser:
+        flash('Only the superuser can manage admin users.', 'error')
+        return redirect(url_for('admin.dashboard'))
 
 def _allowed_file(filename):
     exts = current_app.config.get('ALLOWED_EXTENSIONS', {'pdf'})
@@ -199,15 +211,34 @@ def admin_login():
     if session.get('admin_logged_in'):
         return redirect(url_for('admin.dashboard'))
     if request.method == 'POST':
-        if request.form.get('password') == current_app.config.get('ADMIN_PASSWORD', 'admin123'):
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        admin = Admin.query.filter_by(email=email).first()
+
+        if admin and admin.check_password(password):
             session['admin_logged_in'] = True
+            session['admin_id'] = admin.id
+            session['admin_is_superuser'] = admin.is_superuser
             return redirect(url_for('admin.dashboard'))
-        flash('Incorrect password.', 'error')
+
+        if Admin.query.count() == 0 and email == current_app.config.get('ADMIN_EMAIL') and password == current_app.config.get('ADMIN_PASSWORD'):
+            admin = Admin(email=email, is_superuser=True)
+            admin.set_password(password)
+            db.session.add(admin)
+            db.session.commit()
+            session['admin_logged_in'] = True
+            session['admin_id'] = admin.id
+            session['admin_is_superuser'] = True
+            return redirect(url_for('admin.dashboard'))
+
+        flash('Incorrect email or password.', 'error')
     return render_template('admin/login.html')
 
 @admin_bp.route('/logout')
 def logout():
     session.pop('admin_logged_in', None)
+    session.pop('admin_id', None)
+    session.pop('admin_is_superuser', None)
     return redirect(url_for('main.index'))
 
 # ── Admin — dashboard ─────────────────────────────────────────────────────────
@@ -229,7 +260,36 @@ def dashboard():
     }
     return render_template('admin/dashboard.html',
         profile=profile, skills=skills, projects=projects,
-        recent=recent, counts=counts)
+        recent=recent, counts=counts, is_superuser=session.get('admin_is_superuser', False))
+
+@admin_bp.route('/users')
+def admin_users():
+    redir = _superuser_required()
+    if redir:
+        return redir
+    return render_template('admin/users.html', admins=Admin.query.order_by(Admin.email).all())
+
+@admin_bp.route('/users/add', methods=['GET', 'POST'])
+def add_admin():
+    redir = _superuser_required()
+    if redir:
+        return redir
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        if not email or not password:
+            flash('Admin email and password are required.', 'error')
+            return redirect(url_for('admin.add_admin'))
+        if Admin.query.filter_by(email=email).first():
+            flash('An admin with that email already exists.', 'error')
+            return redirect(url_for('admin.add_admin'))
+        admin = Admin(email=email, is_superuser=False)
+        admin.set_password(password)
+        db.session.add(admin)
+        db.session.commit()
+        flash('Admin user added successfully.', 'success')
+        return redirect(url_for('admin.admin_users'))
+    return render_template('admin/add_user.html')
 
 # ── Admin — profile / skills / projects (unchanged logic, new templates) ──────
 @admin_bp.route('/profile/edit', methods=['GET', 'POST'])

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Users — Visionexa Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <a href="/" class="admin-brand-link">Visionexa</a>
+            <span class="admin-badge">Admin</span>
+        </div>
+        <nav class="admin-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link">Dashboard</a>
+            <a href="{{ url_for('admin.admin_users') }}" class="admin-nav-link active">Admins</a>
+            <a href="{{ url_for('admin.logout') }}" class="admin-nav-link admin-logout">Logout</a>
+        </nav>
+    </aside>
+    <main class="admin-main">
+        <div class="admin-page-header">
+            <div>
+                <h1 class="admin-page-title">Admin users</h1>
+                <p class="admin-page-sub">Only the superuser can add other administrators.</p>
+            </div>
+            <a href="{{ url_for('admin.add_admin') }}" class="button button-primary">Add admin</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}" style="margin-bottom: 1rem;">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="admin-table-card">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admin in admins %}
+                    <tr>
+                        <td>{{ admin.email }}</td>
+                        <td>{{ 'Superuser' if admin.is_superuser else 'Admin' }}</td>
+                        <td>{{ admin.created_at.strftime('%Y-%m-%d') if admin.created_at else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not admins %}
+                    <tr>
+                        <td colspan="3">No admin users configured.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>

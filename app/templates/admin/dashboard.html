@@ -105,6 +105,13 @@
             <p class="admin-td-muted">{{ projects|length }} project{{ 's' if projects|length != 1 else '' }} on file</p>
             <a href="{{ url_for('admin.manage_projects') }}" class="admin-action-link" style="margin-top: 1rem; display: inline-block;">Manage projects &rarr;</a>
         </div>
+        {% if is_superuser %}
+        <div class="admin-info-card">
+            <h3>Admin users</h3>
+            <p class="admin-td-muted">Manage who can sign in</p>
+            <a href="{{ url_for('admin.admin_users') }}" class="admin-action-link" style="margin-top: 1rem; display: inline-block;">Manage admins &rarr;</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -20,14 +20,20 @@ class AdminCompatibilityTestCase(unittest.TestCase):
         self.assertIn('/admin/', response.headers['Location'])
 
     def test_admin_login_with_correct_password(self):
-        response = self.client.post('/admin/', data={'password': 'admin123'}, follow_redirects=False)
+        response = self.client.post('/admin/', data={
+            'email': 'joseyusuf0@gmail.com',
+            'password': 'admin@1234',
+        }, follow_redirects=False)
         self.assertEqual(response.status_code, 302)
         self.assertIn('/admin/dashboard', response.headers['Location'])
 
     def test_admin_login_with_bad_password_shows_error(self):
-        response = self.client.post('/admin/', data={'password': 'wrongpass'}, follow_redirects=True)
+        response = self.client.post('/admin/', data={
+            'email': 'joseyusuf0@gmail.com',
+            'password': 'wrongpass',
+        }, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Incorrect password.', response.data)
+        self.assertIn(b'Incorrect email or password.', response.data)
 
     def test_public_profile_api_still_works(self):
         profile_payload = {
@@ -74,12 +80,41 @@ class AdminCompatibilityTestCase(unittest.TestCase):
 
     def test_admin_routes_require_login_after_successful_login(self):
         with self.client as client:
-            login = client.post('/admin/', data={'password': 'admin123'}, follow_redirects=True)
+            login = client.post('/admin/', data={
+                'email': 'joseyusuf0@gmail.com',
+                'password': 'admin@1234',
+            }, follow_redirects=True)
             self.assertEqual(login.status_code, 200)
             self.assertIn(b'Dashboard', login.data)
 
             response = client.get('/admin/skills')
             self.assertEqual(response.status_code, 200)
+
+    def test_superuser_can_add_admin_and_new_admin_can_login(self):
+        with self.client as client:
+            login = client.post('/admin/', data={
+                'email': 'joseyusuf0@gmail.com',
+                'password': 'admin@1234',
+            }, follow_redirects=True)
+            self.assertEqual(login.status_code, 200)
+            self.assertIn(b'Dashboard', login.data)
+
+            add_response = client.post('/admin/users/add', data={
+                'email': 'newadmin@example.com',
+                'password': 'newpass123',
+            }, follow_redirects=True)
+            self.assertEqual(add_response.status_code, 200)
+            self.assertIn(b'Admin user added successfully.', add_response.data)
+
+            logout = client.get('/admin/logout', follow_redirects=True)
+            self.assertEqual(logout.status_code, 200)
+
+            new_login = client.post('/admin/', data={
+                'email': 'newadmin@example.com',
+                'password': 'newpass123',
+            }, follow_redirects=True)
+            self.assertEqual(new_login.status_code, 200)
+            self.assertIn(b'Dashboard', new_login.data)
 
 if __name__ == '__main__':
     unittest.main()
