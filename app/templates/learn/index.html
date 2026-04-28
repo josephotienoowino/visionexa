@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Learning Hub — Visionexa{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<section class="page-hero learn-hero">
+    <div class="container">
+        <span class="eyebrow">Learner Portal</span>
+        <h1 class="gradient-text">Your learning hub.</h1>
+        <p>Access your video lessons, join live sessions, and download course materials — all in one place.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <!-- Filter bar -->
+        <div class="learn-filters">
+            <div class="learn-type-tabs">
+                <a href="{{ url_for('learn.index', course=filter_course) }}"
+                   class="learn-tab {% if not filter_type %}active{% endif %}">
+                    All
+                    <span class="learn-tab-count">{{ counts.all }}</span>
+                </a>
+                <a href="{{ url_for('learn.index', type='video', course=filter_course) }}"
+                   class="learn-tab {% if filter_type == 'video' %}active{% endif %}">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><polygon points="4 3 16 10 4 17"/></svg>
+                    Videos
+                    <span class="learn-tab-count">{{ counts.video }}</span>
+                </a>
+                <a href="{{ url_for('learn.index', type='meet', course=filter_course) }}"
+                   class="learn-tab {% if filter_type == 'meet' %}active{% endif %}">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6zm14.553-2.106A1 1 0 0 1 18 4.83v10.34a1 1 0 0 1-1.447.894L13 14V6l3.553-2.106z"/></svg>
+                    Live Sessions
+                    <span class="learn-tab-count">{{ counts.meet }}</span>
+                </a>
+                <a href="{{ url_for('learn.index', type='pdf', course=filter_course) }}"
+                   class="learn-tab {% if filter_type == 'pdf' %}active{% endif %}">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M4 4a2 2 0 0 1 2-2h4.586A2 2 0 0 1 12 2.586L15.414 6A2 2 0 0 1 16 7.414V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4zm4 9a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2H8zm-1-4a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H8a1 1 0 0 1-1-1z" clip-rule="evenodd"/></svg>
+                    PDF Resources
+                    <span class="learn-tab-count">{{ counts.pdf }}</span>
+                </a>
+            </div>
+
+            <div class="learn-course-filter">
+                {% set course_labels = {
+                    '':         'All courses',
+                    'computer': 'Computer Training',
+                    'ai':       'AI & Tech',
+                    'forex':    'Forex Trading',
+                    'general':  'General'
+                } %}
+                <select class="form-control learn-course-select"
+                        onchange="window.location.href=this.value">
+                    {% for tag, label in course_labels.items() %}
+                    <option value="{{ url_for('learn.index', type=filter_type, course=tag if tag else '') }}"
+                            {% if filter_course == tag %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Content grid -->
+        {% if items %}
+        <div class="learn-grid">
+            {% for item in items %}
+            <article class="learn-card fade-up">
+                <!-- Card top bar with type -->
+                <div class="learn-card-header ct-header-{{ item.content_type }}">
+                    {% if item.content_type == 'video' %}
+                    <span class="learn-type-label">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><polygon points="4 3 16 10 4 17"/></svg>
+                        Video lesson
+                    </span>
+                    {% elif item.content_type == 'meet' %}
+                    <span class="learn-type-label">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path d="M2 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6zm14.553-2.106A1 1 0 0 1 18 4.83v10.34a1 1 0 0 1-1.447.894L13 14V6l3.553-2.106z"/></svg>
+                        Live session
+                    </span>
+                    {% else %}
+                    <span class="learn-type-label">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M4 4a2 2 0 0 1 2-2h4.586A2 2 0 0 1 12 2.586L15.414 6A2 2 0 0 1 16 7.414V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4zm4 9a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2H8zm-1-4a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H8a1 1 0 0 1-1-1z" clip-rule="evenodd"/></svg>
+                        PDF resource
+                    </span>
+                    {% endif %}
+
+                    {% set course_labels_short = {
+                        'computer': 'Computer',
+                        'ai':       'AI & Tech',
+                        'forex':    'Forex',
+                        'general':  'General'
+                    } %}
+                    {% if item.course_tag and item.course_tag != 'general' %}
+                    <span class="learn-course-chip">{{ course_labels_short.get(item.course_tag, item.course_tag) }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="learn-card-body">
+                    <h3 class="learn-card-title">{{ item.title }}</h3>
+
+                    {% if item.description %}
+                    <p class="learn-card-desc">{{ item.description }}</p>
+                    {% endif %}
+
+                    {% if item.scheduled_at %}
+                    <div class="learn-scheduled">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1zm0 5a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H6z" clip-rule="evenodd"/></svg>
+                        {{ item.scheduled_at.strftime('%A, %B %d at %-I:%M %p') }}
+                    </div>
+                    {% endif %}
+
+                    <div class="learn-card-footer">
+                        <span class="learn-card-date">{{ item.created_at.strftime('%b %d, %Y') }}</span>
+
+                        {% if item.url %}
+                            {% if item.content_type == 'video' %}
+                            <a href="{{ item.url }}" target="_blank" rel="noopener" class="button button-secondary learn-card-btn">
+                                Watch
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                            </a>
+                            {% elif item.content_type == 'meet' %}
+                            <a href="{{ item.url }}" target="_blank" rel="noopener" class="button button-primary learn-card-btn">
+                                Join session
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                            </a>
+                            {% else %}
+                            <a href="{{ item.url }}" target="_blank" rel="noopener" class="button button-secondary learn-card-btn">
+                                Download PDF
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M8 3v7M5 8l3 3 3-3M3 13h10"/></svg>
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="learn-empty fade-up">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color: var(--text-dim); margin-bottom: 1rem;"><rect x="4" y="8" width="40" height="32" rx="4"/><path d="M4 16h40M16 8v8M32 8v8"/></svg>
+            <h3>Nothing here yet</h3>
+            <p>
+                {% if filter_type or filter_course %}
+                No {{ filter_type or '' }} content found{% if filter_course %} for this course{% endif %}.
+                <a href="{{ url_for('learn.index') }}">Clear filters</a>
+                {% else %}
+                Content will appear here as soon as your instructor posts something.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+<section class="section section-cta">
+    <div class="container">
+        <div class="cta-panel fade-up">
+            <div>
+                <span class="eyebrow">Need help?</span>
+                <h2>Questions about a lesson or your course?</h2>
+                <p>Reach out to your instructor directly — we're here to make sure you get the most out of every session.</p>
+            </div>
+            <a href="{{ url_for('main.contact') }}" class="button button-primary">Contact us</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

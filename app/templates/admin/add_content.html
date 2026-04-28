@@ -1,0 +1,162 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if item %}Edit{% else %}Post{% endif %} Content — Visionexa Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">{% if item %}Edit content{% else %}Post new content{% endif %}</h1>
+        <p class="admin-page-sub">Share a video lesson, live session link, or PDF resource with learners.</p>
+    </div>
+    <a href="{{ url_for('admin.content_list') }}" class="button button-secondary">Cancel</a>
+</div>
+
+<div class="admin-form-card">
+    <form method="POST" enctype="multipart/form-data" class="admin-form">
+
+        <!-- Type selector -->
+        <div class="form-group">
+            <label class="form-group label">Content type</label>
+            <div class="type-selector">
+                <label class="type-option" data-type="video">
+                    <input type="radio" name="content_type" value="video"
+                           {% if not item or item.content_type == 'video' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <strong>Video lesson</strong>
+                        <span>YouTube, Vimeo, or any video URL</span>
+                    </span>
+                </label>
+                <label class="type-option" data-type="meet">
+                    <input type="radio" name="content_type" value="meet"
+                           {% if item and item.content_type == 'meet' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.26a1 1 0 0 1-1.447.9L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/></svg>
+                        <strong>Live session</strong>
+                        <span>Google Meet or Zoom link</span>
+                    </span>
+                </label>
+                <label class="type-option" data-type="pdf">
+                    <input type="radio" name="content_type" value="pdf"
+                           {% if item and item.content_type == 'pdf' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <strong>PDF resource</strong>
+                        <span>Upload a file or paste a link</span>
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+            <label class="form-group label" for="title">Title <span class="required">*</span></label>
+            <input type="text" id="title" name="title" class="form-control"
+                   value="{{ item.title if item else '' }}" required placeholder="e.g. Introduction to Excel Formulas">
+        </div>
+
+        <!-- URL field — label adapts per type via JS -->
+        <div class="form-group" id="url-group">
+            <label class="form-group label" id="url-label" for="url">Link</label>
+            <input type="url" id="url" name="url" class="form-control"
+                   value="{{ item.url if item else '' }}"
+                   placeholder="https://…">
+            <p class="form-hint" id="url-hint">Paste the full URL to the video, meeting, or resource.</p>
+        </div>
+
+        <!-- PDF file upload — shown only when type=pdf -->
+        <div class="form-group" id="upload-group" style="display:none;">
+            <label class="form-group label" for="pdf_file">Upload PDF (optional — overrides link above)</label>
+            <input type="file" id="pdf_file" name="pdf_file" class="form-control-file" accept=".pdf">
+            {% if item and item.content_type == 'pdf' and item.url and '/uploads/' in item.url %}
+            <p class="form-hint">A file is already uploaded. Upload a new one to replace it.</p>
+            {% endif %}
+        </div>
+
+        <!-- Scheduled date — shown only when type=meet -->
+        <div class="form-group" id="schedule-group" style="display:none;">
+            <label class="form-group label" for="scheduled_at">Session date and time</label>
+            <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control"
+                   value="{{ item.scheduled_at.strftime('%Y-%m-%dT%H:%M') if item and item.scheduled_at else '' }}">
+            <p class="form-hint">Learners will see this as the scheduled time for the live session.</p>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label class="form-group label" for="description">Description</label>
+            <textarea id="description" name="description" class="form-control"
+                      rows="4" placeholder="What will learners get from this?">{{ item.description if item else '' }}</textarea>
+        </div>
+
+        <!-- Course tag -->
+        <div class="form-group">
+            <label class="form-group label" for="course_tag">Course</label>
+            <select id="course_tag" name="course_tag" class="form-control">
+                {% set tag_labels = {
+                    'general':  'General — all learners',
+                    'computer': 'Computer Training',
+                    'ai':       'AI & Tech Courses',
+                    'forex':    'Forex Trading'
+                } %}
+                {% for tag in course_tags %}
+                <option value="{{ tag }}" {% if item and item.course_tag == tag %}selected{% endif %}>
+                    {{ tag_labels.get(tag, tag.title()) }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Active toggle -->
+        <div class="form-group form-group--inline">
+            <label class="toggle-switch">
+                <input type="checkbox" name="is_active" value="1"
+                       {% if not item or item.is_active %}checked{% endif %}>
+                <span class="toggle-track"></span>
+            </label>
+            <div>
+                <p class="form-toggle-label">Publish immediately</p>
+                <p class="form-hint">Uncheck to save as a draft hidden from learners.</p>
+            </div>
+        </div>
+
+        <div class="admin-form-actions">
+            <button type="submit" class="button button-primary">
+                {% if item %}Save changes{% else %}Post content{% endif %}
+            </button>
+            <a href="{{ url_for('admin.content_list') }}" class="button button-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const radios      = document.querySelectorAll('input[name="content_type"]');
+    const urlGroup    = document.getElementById('url-group');
+    const uploadGroup = document.getElementById('upload-group');
+    const schedGroup  = document.getElementById('schedule-group');
+    const urlLabel    = document.getElementById('url-label');
+    const urlHint     = document.getElementById('url-hint');
+    const urlInput    = document.getElementById('url');
+
+    const hints = {
+        video: { label: 'Video URL', hint: 'Paste a YouTube, Vimeo, or any video link.',        placeholder: 'https://youtube.com/watch?v=…' },
+        meet:  { label: 'Meeting link', hint: 'Paste the Google Meet or Zoom invite URL.',       placeholder: 'https://meet.google.com/…' },
+        pdf:   { label: 'PDF link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+    };
+
+    function update() {
+        const type = document.querySelector('input[name="content_type"]:checked').value;
+        const h = hints[type];
+        urlLabel.textContent      = h.label;
+        urlHint.textContent       = h.hint;
+        urlInput.placeholder      = h.placeholder;
+        uploadGroup.style.display = type === 'pdf'  ? '' : 'none';
+        schedGroup.style.display  = type === 'meet' ? '' : 'none';
+    }
+
+    radios.forEach(r => r.addEventListener('change', update));
+    update();
+})();
+</script>
+{% endblock %}

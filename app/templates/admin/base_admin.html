@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin — Visionexa{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="admin-body">
+
+<div class="admin-layout">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <a href="{{ url_for('main.index') }}" class="admin-brand-link">Visionexa</a>
+            <span class="admin-badge">Admin</span>
+        </div>
+
+        <nav class="admin-nav">
+            <a href="{{ url_for('admin.dashboard') }}"
+               class="admin-nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4zm0 6a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6zm9 0a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-2zm0 6a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-1z"/></svg>
+                Dashboard
+            </a>
+
+            <div class="admin-nav-section">Content</div>
+
+            <a href="{{ url_for('admin.content_list') }}"
+               class="admin-nav-link {% if request.endpoint in ('admin.content_list', 'admin.add_content', 'admin.edit_content') %}active{% endif %}">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6zm3.293 1.293a1 1 0 0 0 0 1.414l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 1 0-1.414-1.414L10 9.586 7.707 7.293a1 1 0 0 0-1.414 0z"/></svg>
+                All Content
+            </a>
+
+            <a href="{{ url_for('admin.add_content') }}"
+               class="admin-nav-link {% if request.endpoint == 'admin.add_content' and not request.view_args.get('item_id') %}active{% endif %}">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1z" clip-rule="evenodd"/></svg>
+                Post Content
+            </a>
+
+            <div class="admin-nav-section">Site</div>
+
+            <a href="{{ url_for('admin.edit_profile') }}"
+               class="admin-nav-link {% if request.endpoint == 'admin.edit_profile' %}active{% endif %}">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-7 9a7 7 0 1 1 14 0H3z" clip-rule="evenodd"/></svg>
+                Profile
+            </a>
+
+            <a href="{{ url_for('admin.manage_skills') }}"
+               class="admin-nav-link {% if 'skill' in request.endpoint %}active{% endif %}">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 0 0 5.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 0 1 5.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0 1 14.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0 0 14.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 1 1-2 0V4.804z"/></svg>
+                Skills
+            </a>
+
+            <a href="{{ url_for('admin.manage_projects') }}"
+               class="admin-nav-link {% if 'project' in request.endpoint %}active{% endif %}">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H7zM4 7a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1zm-2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z"/></svg>
+                Projects
+            </a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            <a href="{{ url_for('learn.index') }}" class="admin-nav-link" target="_blank">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 1 0 0 2h2.586l-6.293 6.293a1 1 0 1 0 1.414 1.414L15 6.414V9a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1h-5z"/><path d="M5 5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3a1 1 0 1 0-2 0v3H5V7h3a1 1 0 0 0 0-2H5z"/></svg>
+                Learner Portal
+            </a>
+            <a href="{{ url_for('admin.logout') }}" class="admin-nav-link admin-logout">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h7a1 1 0 0 0 0-2H4V5h6a1 1 0 0 0 0-2H3zm11.707 4.293a1 1 0 0 1 0 1.414L13.414 10l1.293 1.293a1 1 0 0 1-1.414 1.414l-2-2a1 1 0 0 1 0-1.414l2-2a1 1 0 0 1 1.414 0z" clip-rule="evenodd"/><path d="M13 10a1 1 0 0 1 1-1h3a1 1 0 0 1 0 2h-3a1 1 0 0 1-1-1z"/></svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="admin-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom: 1.5rem;">
+            {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

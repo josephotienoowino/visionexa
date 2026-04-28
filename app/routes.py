@@ -1,14 +1,46 @@
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, session
+import os
+import uuid
+from datetime import datetime
+
+from flask import (Blueprint, render_template, request, jsonify, flash,
+                   redirect, url_for, current_app, session)
 from flask_mail import Message
+from werkzeug.utils import secure_filename
+
 from app import db, mail
-from app.models import Profile, Skill, Project
+from app.models import Profile, Skill, Project, Content, COURSE_TAGS
 
-# Create blueprints
-main_bp = Blueprint('main', __name__)
+# ── Blueprints ────────────────────────────────────────────────────────────────
+main_bp    = Blueprint('main',    __name__)
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
-admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+admin_bp   = Blueprint('admin',   __name__, url_prefix='/admin')
+learn_bp   = Blueprint('learn',   __name__, url_prefix='/learn')
 
-# Main routes
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def _admin_required():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin.admin_login'))
+
+def _allowed_file(filename):
+    exts = current_app.config.get('ALLOWED_EXTENSIONS', {'pdf'})
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in exts
+
+def _save_pdf(file):
+    """Save an uploaded PDF to the uploads folder; return its static URL."""
+    filename    = secure_filename(file.filename)
+    unique_name = f"{uuid.uuid4().hex}_{filename}"
+    dest        = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs', unique_name)
+    file.save(dest)
+    return url_for('static', filename=f'uploads/pdfs/{unique_name}')
+
+@admin_bp.before_request
+def require_admin():
+    if request.endpoint in ('admin.admin_login', 'admin.logout'):
+        return
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin.admin_login'))
+
+# ── Main public routes ────────────────────────────────────────────────────────
 @main_bp.route('/')
 def index():
     profile = Profile.query.first()
@@ -45,12 +77,12 @@ def contact():
     form = request.form if request.method == 'POST' else {}
 
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
+        name    = request.form.get('name',    '').strip()
+        email   = request.form.get('email',   '').strip()
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
 
-        if not name or not email or not subject or not message:
+        if not all([name, email, subject, message]):
             flash('Please complete all fields before sending your message.', 'error')
             return render_template('contact.html', profile=profile, form=form)
 
@@ -75,264 +107,217 @@ def contact():
 
     return render_template('contact.html', profile=profile, form=form)
 
-# Profile routes
+# ── Profile API routes ────────────────────────────────────────────────────────
 @profile_bp.route('/')
 def view_profile():
     profile = Profile.query.first()
     if not profile:
         return jsonify({'error': 'Profile not found'}), 404
-
-    skills = Skill.query.filter_by(profile_id=profile.id).all()
+    skills   = Skill.query.filter_by(profile_id=profile.id).all()
     projects = Project.query.filter_by(profile_id=profile.id).all()
-
     return jsonify({
-        'profile': profile.to_dict(),
-        'skills': [skill.to_dict() for skill in skills],
-        'projects': [project.to_dict() for project in projects],
+        'profile':  profile.to_dict(),
+        'skills':   [s.to_dict() for s in skills],
+        'projects': [p.to_dict() for p in projects],
     })
 
 @profile_bp.route('/add', methods=['POST'])
 def add_profile():
-    data = request.get_json()
-
+    data    = request.get_json()
     profile = Profile.query.first()
     if not profile:
         profile = Profile(
-            name=data.get('name'),
-            title=data.get('title'),
-            bio=data.get('bio'),
-            email=data.get('email'),
-            phone=data.get('phone'),
-            location=data.get('location'),
+            name=data.get('name'), title=data.get('title'), bio=data.get('bio'),
+            email=data.get('email'), phone=data.get('phone'), location=data.get('location'),
         )
     else:
-        profile.name = data.get('name', profile.name)
-        profile.title = data.get('title', profile.title)
-        profile.bio = data.get('bio', profile.bio)
-        profile.email = data.get('email', profile.email)
-        profile.phone = data.get('phone', profile.phone)
-        profile.location = data.get('location', profile.location)
-
+        for field in ('name', 'title', 'bio', 'email', 'phone', 'location'):
+            if field in data:
+                setattr(profile, field, data[field])
     db.session.add(profile)
     db.session.commit()
-
     return jsonify(profile.to_dict()), 201
 
 @profile_bp.route('/skill/add', methods=['POST'])
 def add_skill():
-    data = request.get_json()
+    data    = request.get_json()
     profile = Profile.query.first()
-
     if not profile:
         return jsonify({'error': 'Profile not found'}), 404
-
-    skill = Skill(
-        name=data.get('name'),
-        level=data.get('level'),
-        profile_id=profile.id
-    )
-
+    skill = Skill(name=data.get('name'), level=data.get('level'), profile_id=profile.id)
     db.session.add(skill)
     db.session.commit()
-
     return jsonify(skill.to_dict()), 201
 
 @profile_bp.route('/project/add', methods=['POST'])
 def add_project():
-    data = request.get_json()
+    data    = request.get_json()
     profile = Profile.query.first()
-
     if not profile:
         return jsonify({'error': 'Profile not found'}), 404
-
     project = Project(
-        title=data.get('title'),
-        description=data.get('description'),
-        url=data.get('url'),
-        github_url=data.get('github_url'),
+        title=data.get('title'), description=data.get('description'),
+        url=data.get('url'), github_url=data.get('github_url'),
         image_url=data.get('image_url'),
-        start_date=data.get('start_date'),
-        end_date=data.get('end_date'),
-        profile_id=profile.id
+        start_date=data.get('start_date'), end_date=data.get('end_date'),
+        profile_id=profile.id,
     )
-
     db.session.add(project)
     db.session.commit()
-
     return jsonify(project.to_dict()), 201
 
 @profile_bp.route('/skill/<int:skill_id>', methods=['PUT', 'DELETE'])
 def manage_skill(skill_id):
     skill = Skill.query.get_or_404(skill_id)
-    
     if request.method == 'DELETE':
         db.session.delete(skill)
         db.session.commit()
         return jsonify({'message': 'Skill deleted'}), 200
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        skill.name = data.get('name', skill.name)
-        skill.level = data.get('level', skill.level)
-        db.session.commit()
-        return jsonify(skill.to_dict()), 200
+    data = request.get_json()
+    skill.name  = data.get('name',  skill.name)
+    skill.level = data.get('level', skill.level)
+    db.session.commit()
+    return jsonify(skill.to_dict()), 200
 
 @profile_bp.route('/project/<int:project_id>', methods=['PUT', 'DELETE'])
 def manage_project(project_id):
     project = Project.query.get_or_404(project_id)
-    
     if request.method == 'DELETE':
         db.session.delete(project)
         db.session.commit()
         return jsonify({'message': 'Project deleted'}), 200
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        project.title = data.get('title', project.title)
-        project.description = data.get('description', project.description)
-        project.url = data.get('url', project.url)
-        project.github_url = data.get('github_url', project.github_url)
-        project.image_url = data.get('image_url', project.image_url)
-        project.start_date = data.get('start_date', project.start_date)
-        project.end_date = data.get('end_date', project.end_date)
-        db.session.commit()
-        return jsonify(project.to_dict()), 200
+    data = request.get_json()
+    for field in ('title', 'description', 'url', 'github_url', 'image_url', 'start_date', 'end_date'):
+        if field in data:
+            setattr(project, field, data[field])
+    db.session.commit()
+    return jsonify(project.to_dict()), 200
 
-# Admin routes
+# ── Admin — auth ──────────────────────────────────────────────────────────────
 @admin_bp.route('/', methods=['GET', 'POST'])
 def admin_login():
+    if session.get('admin_logged_in'):
+        return redirect(url_for('admin.dashboard'))
     if request.method == 'POST':
-        password = request.form.get('password')
-        # Simple password check - in production, use proper authentication
-        if password == current_app.config.get('ADMIN_PASSWORD', 'admin123'):
+        if request.form.get('password') == current_app.config.get('ADMIN_PASSWORD', 'admin123'):
             session['admin_logged_in'] = True
             return redirect(url_for('admin.dashboard'))
-        else:
-            flash('Invalid password', 'error')
-    
+        flash('Incorrect password.', 'error')
     return render_template('admin/login.html')
 
+@admin_bp.route('/logout')
+def logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('main.index'))
+
+# ── Admin — dashboard ─────────────────────────────────────────────────────────
 @admin_bp.route('/dashboard')
 def dashboard():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
-    profile = Profile.query.first()
-    skills = Skill.query.all()
+    redir = _admin_required()
+    if redir:
+        return redir
+    profile  = Profile.query.first()
+    skills   = Skill.query.all()
     projects = Project.query.all()
-    
-    return render_template('admin/dashboard.html', profile=profile, skills=skills, projects=projects)
+    recent   = Content.query.order_by(Content.created_at.desc()).limit(5).all()
+    counts   = {
+        'total':  Content.query.count(),
+        'video':  Content.query.filter_by(content_type='video').count(),
+        'meet':   Content.query.filter_by(content_type='meet').count(),
+        'pdf':    Content.query.filter_by(content_type='pdf').count(),
+        'active': Content.query.filter_by(is_active=True).count(),
+    }
+    return render_template('admin/dashboard.html',
+        profile=profile, skills=skills, projects=projects,
+        recent=recent, counts=counts)
 
+# ── Admin — profile / skills / projects (unchanged logic, new templates) ──────
 @admin_bp.route('/profile/edit', methods=['GET', 'POST'])
 def edit_profile():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
+    redir = _admin_required()
+    if redir:
+        return redir
     profile = Profile.query.first()
-    
     if request.method == 'POST':
         if not profile:
             profile = Profile()
-        
-        profile.name = request.form.get('name')
-        profile.title = request.form.get('title')
-        profile.bio = request.form.get('bio')
-        profile.email = request.form.get('email')
-        profile.phone = request.form.get('phone')
-        profile.location = request.form.get('location')
-        profile.profile_image_url = request.form.get('profile_image_url')
-        
+        for field in ('name', 'title', 'bio', 'email', 'phone', 'location', 'profile_image_url'):
+            setattr(profile, field, request.form.get(field))
         db.session.add(profile)
         db.session.commit()
-        
-        flash('Profile updated successfully', 'success')
+        flash('Profile updated successfully.', 'success')
         return redirect(url_for('admin.dashboard'))
-    
     return render_template('admin/edit_profile.html', profile=profile)
 
 @admin_bp.route('/skills')
 def manage_skills():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
-    skills = Skill.query.all()
-    return render_template('admin/skills.html', skills=skills)
+    redir = _admin_required()
+    if redir:
+        return redir
+    return render_template('admin/skills.html', skills=Skill.query.all())
 
 @admin_bp.route('/skills/add', methods=['GET', 'POST'])
 def add_skill():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
+    redir = _admin_required()
+    if redir:
+        return redir
     if request.method == 'POST':
         profile = Profile.query.first()
         if not profile:
-            flash('Profile not found', 'error')
+            flash('Create a profile first.', 'error')
             return redirect(url_for('admin.dashboard'))
-        
-        skill = Skill(
+        db.session.add(Skill(
             name=request.form.get('name'),
             level=request.form.get('level'),
-            profile_id=profile.id
-        )
-        
-        db.session.add(skill)
+            profile_id=profile.id,
+        ))
         db.session.commit()
-        
-        flash('Skill added successfully', 'success')
+        flash('Skill added.', 'success')
         return redirect(url_for('admin.manage_skills'))
-    
     return render_template('admin/add_skill.html')
 
 @admin_bp.route('/skills/<int:skill_id>/edit', methods=['GET', 'POST'])
 def edit_skill(skill_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
+    redir = _admin_required()
+    if redir:
+        return redir
     skill = Skill.query.get_or_404(skill_id)
-    
     if request.method == 'POST':
-        skill.name = request.form.get('name')
+        skill.name  = request.form.get('name')
         skill.level = request.form.get('level')
-        
         db.session.commit()
-        
-        flash('Skill updated successfully', 'success')
+        flash('Skill updated.', 'success')
         return redirect(url_for('admin.manage_skills'))
-    
     return render_template('admin/edit_skill.html', skill=skill)
 
 @admin_bp.route('/skills/<int:skill_id>/delete', methods=['POST'])
 def delete_skill(skill_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
-    skill = Skill.query.get_or_404(skill_id)
-    db.session.delete(skill)
+    redir = _admin_required()
+    if redir:
+        return redir
+    db.session.delete(Skill.query.get_or_404(skill_id))
     db.session.commit()
-    
-    flash('Skill deleted successfully', 'success')
+    flash('Skill deleted.', 'success')
     return redirect(url_for('admin.manage_skills'))
 
 @admin_bp.route('/projects')
 def manage_projects():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
-    projects = Project.query.all()
-    return render_template('admin/projects.html', projects=projects)
+    redir = _admin_required()
+    if redir:
+        return redir
+    return render_template('admin/projects.html', projects=Project.query.all())
 
 @admin_bp.route('/projects/add', methods=['GET', 'POST'])
 def add_project():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
+    redir = _admin_required()
+    if redir:
+        return redir
     if request.method == 'POST':
         profile = Profile.query.first()
         if not profile:
-            flash('Profile not found', 'error')
+            flash('Create a profile first.', 'error')
             return redirect(url_for('admin.dashboard'))
-        
-        project = Project(
+        db.session.add(Project(
             title=request.form.get('title'),
             description=request.form.get('description'),
             url=request.form.get('url'),
@@ -340,53 +325,165 @@ def add_project():
             image_url=request.form.get('image_url'),
             start_date=request.form.get('start_date') or None,
             end_date=request.form.get('end_date') or None,
-            profile_id=profile.id
-        )
-        
-        db.session.add(project)
+            profile_id=profile.id,
+        ))
         db.session.commit()
-        
-        flash('Project added successfully', 'success')
+        flash('Project added.', 'success')
         return redirect(url_for('admin.manage_projects'))
-    
     return render_template('admin/add_project.html')
 
 @admin_bp.route('/projects/<int:project_id>/edit', methods=['GET', 'POST'])
 def edit_project(project_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
+    redir = _admin_required()
+    if redir:
+        return redir
     project = Project.query.get_or_404(project_id)
-    
     if request.method == 'POST':
-        project.title = request.form.get('title')
-        project.description = request.form.get('description')
-        project.url = request.form.get('url')
-        project.github_url = request.form.get('github_url')
-        project.image_url = request.form.get('image_url')
+        for field in ('title', 'description', 'url', 'github_url', 'image_url'):
+            setattr(project, field, request.form.get(field))
         project.start_date = request.form.get('start_date') or None
-        project.end_date = request.form.get('end_date') or None
-        
+        project.end_date   = request.form.get('end_date')   or None
         db.session.commit()
-        
-        flash('Project updated successfully', 'success')
+        flash('Project updated.', 'success')
         return redirect(url_for('admin.manage_projects'))
-    
     return render_template('admin/edit_project.html', project=project)
 
 @admin_bp.route('/projects/<int:project_id>/delete', methods=['POST'])
 def delete_project(project_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin.admin_login'))
-    
-    project = Project.query.get_or_404(project_id)
-    db.session.delete(project)
+    redir = _admin_required()
+    if redir:
+        return redir
+    db.session.delete(Project.query.get_or_404(project_id))
     db.session.commit()
-    
-    flash('Project deleted successfully', 'success')
+    flash('Project deleted.', 'success')
     return redirect(url_for('admin.manage_projects'))
 
-@admin_bp.route('/logout')
-def logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('main.index'))
+# ── Admin — content management ────────────────────────────────────────────────
+@admin_bp.route('/content')
+def content_list():
+    redir = _admin_required()
+    if redir:
+        return redir
+    filter_type = request.args.get('type', '')
+    query = Content.query.order_by(Content.created_at.desc())
+    if filter_type:
+        query = query.filter_by(content_type=filter_type)
+    items = query.all()
+    return render_template('admin/content.html', items=items, filter_type=filter_type)
+
+@admin_bp.route('/content/add', methods=['GET', 'POST'])
+def add_content():
+    redir = _admin_required()
+    if redir:
+        return redir
+    if request.method == 'POST':
+        content_type = request.form.get('content_type', 'video')
+        url          = request.form.get('url', '').strip()
+
+        # Handle PDF file upload (overrides URL if a file is given)
+        if content_type == 'pdf':
+            f = request.files.get('pdf_file')
+            if f and f.filename and _allowed_file(f.filename):
+                url = _save_pdf(f)
+
+        scheduled_at = None
+        raw_sched = request.form.get('scheduled_at', '').strip()
+        if raw_sched:
+            try:
+                scheduled_at = datetime.strptime(raw_sched, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                pass
+
+        item = Content(
+            title        = request.form.get('title', '').strip(),
+            content_type = content_type,
+            url          = url,
+            description  = request.form.get('description', '').strip(),
+            course_tag   = request.form.get('course_tag', 'general'),
+            scheduled_at = scheduled_at,
+            is_active    = bool(request.form.get('is_active')),
+        )
+        db.session.add(item)
+        db.session.commit()
+        flash('Content posted successfully.', 'success')
+        return redirect(url_for('admin.content_list'))
+
+    return render_template('admin/add_content.html', item=None, course_tags=COURSE_TAGS)
+
+@admin_bp.route('/content/<int:item_id>/edit', methods=['GET', 'POST'])
+def edit_content(item_id):
+    redir = _admin_required()
+    if redir:
+        return redir
+    item = Content.query.get_or_404(item_id)
+    if request.method == 'POST':
+        item.title        = request.form.get('title', '').strip()
+        item.content_type = request.form.get('content_type', item.content_type)
+        item.description  = request.form.get('description', '').strip()
+        item.course_tag   = request.form.get('course_tag', 'general')
+        item.is_active    = bool(request.form.get('is_active'))
+
+        # PDF upload may replace URL
+        new_url = request.form.get('url', '').strip()
+        if item.content_type == 'pdf':
+            f = request.files.get('pdf_file')
+            if f and f.filename and _allowed_file(f.filename):
+                new_url = _save_pdf(f)
+        if new_url:
+            item.url = new_url
+
+        raw_sched = request.form.get('scheduled_at', '').strip()
+        if raw_sched:
+            try:
+                item.scheduled_at = datetime.strptime(raw_sched, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                pass
+        else:
+            item.scheduled_at = None
+
+        db.session.commit()
+        flash('Content updated.', 'success')
+        return redirect(url_for('admin.content_list'))
+
+    return render_template('admin/add_content.html', item=item, course_tags=COURSE_TAGS)
+
+@admin_bp.route('/content/<int:item_id>/delete', methods=['POST'])
+def delete_content(item_id):
+    redir = _admin_required()
+    if redir:
+        return redir
+    db.session.delete(Content.query.get_or_404(item_id))
+    db.session.commit()
+    flash('Content deleted.', 'success')
+    return redirect(url_for('admin.content_list'))
+
+@admin_bp.route('/content/<int:item_id>/toggle', methods=['POST'])
+def toggle_content(item_id):
+    redir = _admin_required()
+    if redir:
+        return redir
+    item = Content.query.get_or_404(item_id)
+    item.is_active = not item.is_active
+    db.session.commit()
+    return redirect(request.referrer or url_for('admin.content_list'))
+
+# ── Learner portal ────────────────────────────────────────────────────────────
+@learn_bp.route('/')
+def index():
+    filter_type   = request.args.get('type',   '').strip()
+    filter_course = request.args.get('course', '').strip()
+    query = Content.query.filter_by(is_active=True).order_by(Content.created_at.desc())
+    if filter_type:
+        query = query.filter_by(content_type=filter_type)
+    if filter_course:
+        query = query.filter_by(course_tag=filter_course)
+    items = query.all()
+    counts = {
+        'all':   Content.query.filter_by(is_active=True).count(),
+        'video': Content.query.filter_by(is_active=True, content_type='video').count(),
+        'meet':  Content.query.filter_by(is_active=True, content_type='meet').count(),
+        'pdf':   Content.query.filter_by(is_active=True, content_type='pdf').count(),
+    }
+    return render_template('learn/index.html',
+        items=items, filter_type=filter_type, filter_course=filter_course,
+        counts=counts, course_tags=COURSE_TAGS)

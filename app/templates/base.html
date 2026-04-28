@@ -23,6 +23,7 @@
                 <li><a href="{{ url_for('main.services') }}" class="nav-link {% if request.endpoint == 'main.services' %}active{% endif %}">Courses</a></li>
                 <li><a href="{{ url_for('main.pricing') }}"  class="nav-link {% if request.endpoint == 'main.pricing' %}active{% endif %}">Pricing</a></li>
                 <li><a href="{{ url_for('main.contact') }}"  class="nav-link {% if request.endpoint == 'main.contact' %}active{% endif %}">Contact</a></li>
+                <li><a href="{{ url_for('learn.index') }}"   class="nav-link {% if request.endpoint and request.endpoint.startswith('learn.') %}active{% endif %}">Learning Hub</a></li>
                 <li><a href="{{ url_for('main.contact') }}"  class="button button-primary nav-cta">Book a Class</a></li>
             </ul>
         </div>
@@ -53,6 +54,7 @@
                 <li><a href="{{ url_for('main.services') }}">Courses</a></li>
                 <li><a href="{{ url_for('main.pricing') }}">Pricing</a></li>
                 <li><a href="{{ url_for('main.highlights') }}">Why Us</a></li>
+                <li><a href="{{ url_for('learn.index') }}">Learning Hub</a></li>
                 <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
                 <li><a href="{{ url_for('admin.admin_login') }}" style="font-size: 0.9em; opacity: 0.7;">Admin</a></li>
             </ul>

@@ -49,10 +49,16 @@ def create_app(config_name='development'):
     def inject_content():
         return site_content
 
+    # Ensure PDF upload directory exists
+    upload_folder = app.config.get('UPLOAD_FOLDER')
+    if upload_folder:
+        os.makedirs(os.path.join(upload_folder, 'pdfs'), exist_ok=True)
+
     # Register blueprints
-    from app.routes import main_bp, profile_bp, admin_bp
+    from app.routes import main_bp, profile_bp, admin_bp, learn_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(learn_bp)
 
     return app

@@ -3,73 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Visionexa</title>
+    <title>Admin Login — Visionexa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        .admin-login {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--color-bg);
-        }
-        .login-form {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        .login-form h2 {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: var(--color-text);
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-        .login-btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--color-primary);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .login-btn:hover {
-            background: var(--color-primary-dark);
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
-    <div class="admin-login">
-        <form class="login-form" method="POST">
-            <h2>Admin Login</h2>
+<div class="admin-login-page">
+    <div class="admin-login-card">
+        <div class="admin-login-brand">
+            <span class="nav-brand" style="-webkit-text-fill-color: unset; color: #fff;">Visionexa</span>
+            <span class="admin-badge">Admin</span>
+        </div>
+        <h1 class="admin-login-title">Welcome back</h1>
+        <p class="admin-login-sub">Sign in to manage content and site settings.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}" style="margin-bottom: 1.25rem;">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="admin-login-form">
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <label class="form-group label" for="password">Admin password</label>
+                <input type="password" id="password" name="password"
+                       class="form-control" placeholder="Enter password" required autofocus>
             </div>
-            <button type="submit" class="login-btn">Login</button>
+            <button type="submit" class="button button-primary" style="width: 100%; margin-top: 0.5rem;">
+                Sign in
+            </button>
         </form>
+
+        <p class="admin-login-back">
+            <a href="{{ url_for('main.index') }}">&larr; Back to the site</a>
+        </p>
     </div>
+</div>
 </body>
 </html>
