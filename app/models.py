@@ -2,7 +2,7 @@ from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-CONTENT_TYPES = ('video', 'meet', 'pdf')
+CONTENT_TYPES = ('video', 'meet', 'pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf')
 COURSE_TAGS   = ('general', 'computer', 'ai', 'forex')
 
 class Profile(db.Model):
@@ -103,12 +103,12 @@ class Admin(db.Model):
 
 
 class Content(db.Model):
-    """Learner content: free video links, Google Meet sessions, PDF resources."""
+    """Learner content: free video links, Google Meet sessions, PDF resources, and document files."""
     __tablename__ = 'content'
 
     id           = db.Column(db.Integer, primary_key=True)
     title        = db.Column(db.String(300), nullable=False)
-    content_type = db.Column(db.String(20), nullable=False)   # video | meet | pdf
+    content_type = db.Column(db.String(20), nullable=False)   # video | meet | pdf | docx | doc | pptx | ppt | xlsx | xls | txt | rtf
     url          = db.Column(db.String(1000))                  # external link or /static/uploads/… path
     description  = db.Column(db.Text)
     course_tag   = db.Column(db.String(50), default='general') # general | computer | ai | forex

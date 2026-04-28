@@ -37,13 +37,16 @@ def _allowed_file(filename):
     exts = current_app.config.get('ALLOWED_EXTENSIONS', {'pdf'})
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in exts
 
-def _save_pdf(file):
-    """Save an uploaded PDF to the uploads folder; return its static URL."""
+def _save_file(file):
+    """Save an uploaded file to the appropriate uploads folder; return its static URL."""
     filename    = secure_filename(file.filename)
+    ext         = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    folder      = 'documents' if ext in {'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'} else 'pdfs'
     unique_name = f"{uuid.uuid4().hex}_{filename}"
-    dest        = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs', unique_name)
+    dest        = os.path.join(current_app.config['UPLOAD_FOLDER'], folder, unique_name)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
     file.save(dest)
-    return url_for('static', filename=f'uploads/pdfs/{unique_name}')
+    return url_for('static', filename=f'uploads/{folder}/{unique_name}')
 
 @admin_bp.before_request
 def require_admin():
@@ -256,6 +259,7 @@ def dashboard():
         'video':  Content.query.filter_by(content_type='video').count(),
         'meet':   Content.query.filter_by(content_type='meet').count(),
         'pdf':    Content.query.filter_by(content_type='pdf').count(),
+        'documents': Content.query.filter(Content.content_type.in_(['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'])).count(),
         'active': Content.query.filter_by(is_active=True).count(),
     }
     return render_template('admin/dashboard.html',
@@ -440,11 +444,11 @@ def add_content():
         content_type = request.form.get('content_type', 'video')
         url          = request.form.get('url', '').strip()
 
-        # Handle PDF file upload (overrides URL if a file is given)
-        if content_type == 'pdf':
-            f = request.files.get('pdf_file')
+        # Handle file upload (overrides URL if a file is given)
+        if content_type in ('pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'):
+            f = request.files.get('file_upload')
             if f and f.filename and _allowed_file(f.filename):
-                url = _save_pdf(f)
+                url = _save_file(f)
 
         scheduled_at = None
         raw_sched = request.form.get('scheduled_at', '').strip()
@@ -483,12 +487,12 @@ def edit_content(item_id):
         item.course_tag   = request.form.get('course_tag', 'general')
         item.is_active    = bool(request.form.get('is_active'))
 
-        # PDF upload may replace URL
+        # File upload may replace URL
         new_url = request.form.get('url', '').strip()
-        if item.content_type == 'pdf':
-            f = request.files.get('pdf_file')
+        if item.content_type in ('pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'):
+            f = request.files.get('file_upload')
             if f and f.filename and _allowed_file(f.filename):
-                new_url = _save_pdf(f)
+                new_url = _save_file(f)
         if new_url:
             item.url = new_url
 
@@ -534,7 +538,10 @@ def index():
     filter_course = request.args.get('course', '').strip()
     query = Content.query.filter_by(is_active=True).order_by(Content.created_at.desc())
     if filter_type:
-        query = query.filter_by(content_type=filter_type)
+        if filter_type == 'documents':
+            query = query.filter(Content.content_type.in_(['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf']))
+        else:
+            query = query.filter_by(content_type=filter_type)
     if filter_course:
         query = query.filter_by(course_tag=filter_course)
     items = query.all()
@@ -543,6 +550,7 @@ def index():
         'video': Content.query.filter_by(is_active=True, content_type='video').count(),
         'meet':  Content.query.filter_by(is_active=True, content_type='meet').count(),
         'pdf':   Content.query.filter_by(is_active=True, content_type='pdf').count(),
+        'documents': Content.query.filter(Content.content_type.in_(['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf']), Content.is_active==True).count(),
     }
     return render_template('learn/index.html',
         items=items, filter_type=filter_type, filter_course=filter_course,

@@ -44,6 +44,42 @@
                         <span>Upload a file or paste a link</span>
                     </span>
                 </label>
+                <label class="type-option" data-type="docx">
+                    <input type="radio" name="content_type" value="docx"
+                           {% if item and item.content_type == 'docx' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8m8 4H8m4-8H8"/></svg>
+                        <strong>Word document</strong>
+                        <span>Upload .docx or .doc file</span>
+                    </span>
+                </label>
+                <label class="type-option" data-type="pptx">
+                    <input type="radio" name="content_type" value="pptx"
+                           {% if item and item.content_type == 'pptx' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="12" width="8" height="6"/><path d="M10 16h4"/></svg>
+                        <strong>PowerPoint</strong>
+                        <span>Upload .pptx or .ppt file</span>
+                    </span>
+                </label>
+                <label class="type-option" data-type="xlsx">
+                    <input type="radio" name="content_type" value="xlsx"
+                           {% if item and item.content_type == 'xlsx' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2l2 3 2-3h2"/><path d="M8 17h2l2-3 2 3h2"/></svg>
+                        <strong>Excel spreadsheet</strong>
+                        <span>Upload .xlsx or .xls file</span>
+                    </span>
+                </label>
+                <label class="type-option" data-type="txt">
+                    <input type="radio" name="content_type" value="txt"
+                           {% if item and item.content_type == 'txt' %}checked{% endif %}>
+                    <span class="type-option-inner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                        <strong>Text file</strong>
+                        <span>Upload .txt or .rtf file</span>
+                    </span>
+                </label>
             </div>
         </div>
 
@@ -63,11 +99,11 @@
             <p class="form-hint" id="url-hint">Paste the full URL to the video, meeting, or resource.</p>
         </div>
 
-        <!-- PDF file upload — shown only when type=pdf -->
+        <!-- File upload — shown for file-based content types -->
         <div class="form-group" id="upload-group" style="display:none;">
-            <label class="form-group label" for="pdf_file">Upload PDF (optional — overrides link above)</label>
-            <input type="file" id="pdf_file" name="pdf_file" class="form-control-file" accept=".pdf">
-            {% if item and item.content_type == 'pdf' and item.url and '/uploads/' in item.url %}
+            <label class="form-group label" id="file-label" for="file_upload">Upload file (optional — overrides link above)</label>
+            <input type="file" id="file_upload" name="file_upload" class="form-control-file" accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.rtf">
+            {% if item and item.content_type in ('pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf') and item.url and '/uploads/' in item.url %}
             <p class="form-hint">A file is already uploaded. Upload a new one to replace it.</p>
             {% endif %}
         </div>
@@ -143,15 +179,25 @@
         video: { label: 'Video URL', hint: 'Paste a YouTube, Vimeo, or any video link.',        placeholder: 'https://youtube.com/watch?v=…' },
         meet:  { label: 'Meeting link', hint: 'Paste the Google Meet or Zoom invite URL.',       placeholder: 'https://meet.google.com/…' },
         pdf:   { label: 'PDF link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        docx:  { label: 'Document link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        doc:   { label: 'Document link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        pptx:  { label: 'Presentation link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        ppt:   { label: 'Presentation link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        xlsx:  { label: 'Spreadsheet link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        xls:   { label: 'Spreadsheet link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        txt:   { label: 'Text file link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        rtf:   { label: 'Text file link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
     };
 
     function update() {
         const type = document.querySelector('input[name="content_type"]:checked').value;
         const h = hints[type];
-        urlLabel.textContent      = h.label;
-        urlHint.textContent       = h.hint;
-        urlInput.placeholder      = h.placeholder;
-        uploadGroup.style.display = type === 'pdf'  ? '' : 'none';
+        if (h) {
+            urlLabel.textContent      = h.label;
+            urlHint.textContent       = h.hint;
+            urlInput.placeholder      = h.placeholder;
+        }
+        uploadGroup.style.display = ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'].includes(type) ? '' : 'none';
         schedGroup.style.display  = type === 'meet' ? '' : 'none';
     }
 
