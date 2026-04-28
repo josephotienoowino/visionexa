@@ -41,12 +41,27 @@ def _save_file(file):
     """Save an uploaded file to the appropriate uploads folder; return its static URL."""
     filename    = secure_filename(file.filename)
     ext         = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    folder      = 'documents' if ext in {'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'} else 'pdfs'
+    if ext in {'jpg', 'jpeg', 'png', 'gif', 'webp'}:
+        folder = 'images'
+    elif ext in {'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'}:
+        folder = 'documents'
+    else:
+        folder = 'pdfs'
     unique_name = f"{uuid.uuid4().hex}_{filename}"
     dest        = os.path.join(current_app.config['UPLOAD_FOLDER'], folder, unique_name)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     file.save(dest)
     return url_for('static', filename=f'uploads/{folder}/{unique_name}')
+
+def _delete_local_file(static_url):
+    """Remove a previously uploaded file given its /static/uploads/... URL."""
+    if not static_url or not static_url.startswith('/static/uploads/'):
+        return
+    path = os.path.join(current_app.root_path, static_url.lstrip('/'))
+    try:
+        os.remove(path)
+    except OSError:
+        pass
 
 @admin_bp.before_request
 def require_admin():
@@ -305,8 +320,17 @@ def edit_profile():
     if request.method == 'POST':
         if not profile:
             profile = Profile()
-        for field in ('name', 'title', 'bio', 'email', 'phone', 'location', 'profile_image_url'):
+        for field in ('name', 'title', 'bio', 'email', 'phone', 'location'):
             setattr(profile, field, request.form.get(field))
+        f = request.files.get('profile_image')
+        if f and f.filename and _allowed_file(f.filename):
+            _delete_local_file(profile.profile_image_url)
+            profile.profile_image_url = _save_file(f)
+        else:
+            new_url = request.form.get('profile_image_url', '').strip() or None
+            if new_url != profile.profile_image_url:
+                _delete_local_file(profile.profile_image_url)
+            profile.profile_image_url = new_url
         db.session.add(profile)
         db.session.commit()
         flash('Profile updated successfully.', 'success')
@@ -381,12 +405,16 @@ def add_project():
         if not profile:
             flash('Create a profile first.', 'error')
             return redirect(url_for('admin.dashboard'))
+        image_url = request.form.get('image_url', '').strip() or None
+        f = request.files.get('project_image')
+        if f and f.filename and _allowed_file(f.filename):
+            image_url = _save_file(f)
         db.session.add(Project(
             title=request.form.get('title'),
             description=request.form.get('description'),
             url=request.form.get('url'),
             github_url=request.form.get('github_url'),
-            image_url=request.form.get('image_url'),
+            image_url=image_url,
             start_date=request.form.get('start_date') or None,
             end_date=request.form.get('end_date') or None,
             profile_id=profile.id,
@@ -403,10 +431,19 @@ def edit_project(project_id):
         return redir
     project = Project.query.get_or_404(project_id)
     if request.method == 'POST':
-        for field in ('title', 'description', 'url', 'github_url', 'image_url'):
+        for field in ('title', 'description', 'url', 'github_url'):
             setattr(project, field, request.form.get(field))
         project.start_date = request.form.get('start_date') or None
         project.end_date   = request.form.get('end_date')   or None
+        f = request.files.get('project_image')
+        if f and f.filename and _allowed_file(f.filename):
+            _delete_local_file(project.image_url)
+            project.image_url = _save_file(f)
+        else:
+            new_url = request.form.get('image_url', '').strip() or None
+            if new_url != project.image_url:
+                _delete_local_file(project.image_url)
+            project.image_url = new_url
         db.session.commit()
         flash('Project updated.', 'success')
         return redirect(url_for('admin.manage_projects'))
@@ -417,7 +454,9 @@ def delete_project(project_id):
     redir = _admin_required()
     if redir:
         return redir
-    db.session.delete(Project.query.get_or_404(project_id))
+    project = Project.query.get_or_404(project_id)
+    _delete_local_file(project.image_url)
+    db.session.delete(project)
     db.session.commit()
     flash('Project deleted.', 'success')
     return redirect(url_for('admin.manage_projects'))

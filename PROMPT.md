@@ -1,6 +1,6 @@
-# Visionexa Task Prompts
+# Visionexa — Engineering Task Prompts
 
-This document contains task prompts designed to evaluate an AI agent's ability to identify gaps, reason about tradeoffs, and implement features in this Flask agency profile website. Each prompt is written from the perspective of a real engineer encountering a real problem, without naming specific files or methods.
+Prompts for evaluating an AI agent's ability to reason about and implement real features and fixes in this Flask portfolio application. Each prompt is grounded in actual observed behavior in the codebase. Models are expected to fall short on Turn 1. Keep it high level so the model has room to fail naturally.
 
 ---
 
@@ -8,23 +8,25 @@ This document contains task prompts designed to evaluate an AI agent's ability t
 
 **Task Type:** Feature Enhancement / Extension
 
-**Gist:** The database stores a full portfolio — skills, projects with dates and links — but none of it renders anywhere on the website. Every visitor sees the same static placeholder content regardless of what's in the database.
+**Gist:** The app stores skills and projects in a relational database but every public-facing page ignores that data entirely, showing hardcoded placeholder content instead — the admin CRUD is functionally decorative.
+
+---
 
 **Turn 1**
 
-I set up the database, added my skills and several projects with descriptions, links, and dates through the API, and then went to look at the site to see how it all comes together. Nothing shows up. Not the skills, not the projects, not a single piece of the portfolio data I've been building up. The about page just shows a block of bio text and some cards that I didn't write and can't change. The homepage shows the same generic blurb it always has.
+Something that keeps bothering me about the site: we went through the effort of building an admin panel where you can add skills, projects, all your portfolio work — but none of it shows up anywhere on the actual site that visitors see. If you go to the about page or the home page, you see these static cards that were just baked in during initial design, not anything that came from the database. So the admin CRUD is essentially decorative right now. A visitor looking at the site has no idea what projects I've done or what my skill set actually looks like, and that's the whole point of a portfolio.
 
-The gap here is that the data layer and the presentation layer are completely disconnected. There's clearly a data model that was designed to hold a real portfolio — project titles, descriptions, URLs, GitHub links, dates, even images — but there's nowhere on the site where any of that data actually surfaces to a visitor. I'm supposed to be using this as a professional portfolio site, and right now I may as well not have a database at all.
+What I'd expect is for the site to have at least one proper public-facing section — whether that's a dedicated portfolio/work page or integrated into the existing pages — that pulls from the real database records. Skills should show up with their levels displayed in some sensible way. Projects should show title, description, links where available, and dates if they're set. The layout should degrade gracefully when those fields are empty or not filled in. Adding or editing something in the admin should be immediately reflected on the site, no static content to manually sync.
 
-I want the site to actually show what I've built. Projects should be displayed somewhere a visitor can find them — with enough information to understand what the work is and how to learn more. Skills should be visible too, ideally in a way that gives a sense of breadth and level rather than just a flat list. I'm not looking for a massive redesign, I just want the content I've put in to actually appear on the site in a coherent way.
+There's also the question of ordering — projects and skills should come out in some predictable order, probably most recently added or manually sortable. Right now there's no way to control which projects get highlighted, and if the list grows, showing everything without any emphasis is going to look cluttered.
+
+This should feel like a real portfolio section, not a JSON dump. The visual treatment matters. The existing site already has a design language — whatever gets built here needs to fit that, not look bolted on.
+
+---
 
 **What a senior engineer should have done:**
 
-The data model is fully built but completely disconnected from the HTML rendering layer. `Profile` has `skills` and `projects` relationships via SQLAlchemy backref — lazy-loaded, cascade delete-orphan — and `Project` has `title`, `description`, `url`, `github_url`, `image_url`, `start_date`, `end_date`. None of these fields are rendered anywhere in any template.
-
-The `about` route in `routes.py` queries only `Profile.query.first()` and passes only `profile` to the template. The `about.html` template ignores `profile.skills` and `profile.projects` entirely and instead renders three hardcoded article elements ("Strategy-led work", "Human-centered design", "Reliable delivery") that have nothing to do with the database. The `view_profile` API endpoint does correctly query and serialize skills and projects — that logic can be referenced as the query pattern.
-
-A senior engineer would update the `about` route (and likely add a `/work` or `/portfolio` route) to query skills and projects from the profile relationship, pass them to the template, and render them. Projects deserve a dedicated section: card layout with title, description, live link, GitHub link, and date range from `start_date`/`end_date`. Skills should render with their `level` field (Beginner/Intermediate/Advanced/Expert) as a visual indicator — not just a text label. The three hardcoded cards in `about.html` should either be removed or replaced with content from `content.yaml` to stay consistent with how the rest of the site handles static content. The engineer should also note that `image_url` on `Project` is stored but neither rendered in templates nor populated via the add endpoint — that inconsistency needs a decision: expose it or remove it.
+A senior engineer would have identified that the `Profile` model already carries `skills` and `projects` as SQLAlchemy relationships with cascade delete-orphan — meaning the data layer is done and correct. The work is entirely in the presentation and routing layers. They would have added a `/portfolio` or `/work` route under `main_bp` that queries the singleton profile via `Profile.query.first()` and passes its related skills and projects into a new template, with a graceful empty-state fallback if neither relation has rows. The about page's three hardcoded `<article>` "detail-card" elements — "Strategy-led work", "Human-centered design", "Reliable delivery" — would be identified as the placeholders they are and either replaced with data-driven content or removed entirely; they describe fictional work modes, not anything stored in the database. On the skills side, the `level` free-text field would be normalized into a display-safe format (stripped, title-cased) with a CSS width percentage or class mapped from the expected vocabulary (Beginner / Intermediate / Advanced / Expert), since the field has no enum enforcement. Project cards would conditionally render `url`, `github_url`, `image_url`, `start_date`, and `end_date` only when not None or empty, and fall back to a placeholder image when `image_url` is absent. A clear ordering strategy — newest by `id` DESC, or an explicit `display_order` integer column — would be chosen and documented, since the current models have no ordering field. The engineer would also observe that `Project.image_url` is never populated by the `add_project` API endpoint despite existing on the model, flag that as a separate bug requiring a decision, and not silently work around it.
 
 ---
 
@@ -32,23 +34,25 @@ A senior engineer would update the `about` route (and likely add a `/work` or `/
 
 **Task Type:** New Feature
 
-**Gist:** The only way to update the profile, add skills, or manage projects is by sending raw JSON API requests from the command line. There is no browser-based interface for any content management — making the site impossible to maintain for anyone without developer tooling.
+**Gist:** Contact form submissions are fired off as emails and immediately forgotten — there is no database persistence, no admin inbox, and no way to recover a message if the SMTP server is down or misconfigured.
+
+---
 
 **Turn 1**
 
-I've been managing this site by sending curl commands directly to the API whenever I want to update anything — change my bio, add a new skill, log a project I've finished. That was fine when I was building it, but now I'm trying to hand off basic maintenance to someone who isn't technical, and I'm realizing there's no way for them to actually do anything. The site has no management interface at all. Every write operation requires constructing a JSON payload and knowing the exact endpoint URL.
+We have a contact form on the site and it's fine for the happy path — you fill it in, it sends me an email. But I realized recently that I have no idea how many people have actually tried to reach me through that form, because there's no record of any of it anywhere. If the mail server goes down, or the credentials expire, or someone submits on a day when the SMTP config is broken — that message is just gone. I have no fallback, no inbox, no audit trail.
 
-There's also no way to remove or edit things that already exist. I added a skill with a typo and there's no delete. I added a project description with the wrong date and there's no way to fix it short of rebuilding the database. The site is essentially append-only from a management perspective, and even the append path requires command-line access.
+Beyond the reliability problem there's a usability one: even when email delivery works fine, managing contact inquiries through a personal inbox mixed in with everything else is messy. I'd rather be able to open the admin panel and see a list of all the messages that have come in, mark them as read or reviewed, maybe note that I've handled it.
 
-I need a way to manage this content from the browser. At minimum I want to be able to view and edit my profile, add and remove skills, and add, edit, and remove projects — without touching a terminal. I'm not worried about having multiple users or complex permissions. There's one owner of this site and they need to be able to run it without curl.
+The current setup also has no safeguards. Someone could spam the form with hundreds of submissions and I'd either flood my inbox or — if email is broken — silently lose all of them. There's no real feedback to the person submitting either, just a flash message claiming it went through regardless of what actually happened.
+
+What I want is a contact system that stores submissions persistently, gives me a place in the admin to manage them, and doesn't silently fail when email isn't configured. The email notification is nice-to-have but it shouldn't be the only thing standing between the user's message and oblivion. I also want some basic protection against abuse without it becoming a big engineering project.
+
+---
 
 **What a senior engineer should have done:**
 
-The write API has three POST-only endpoints in the `profile_bp` blueprint: `POST /profile/add` (upsert), `POST /profile/skill/add`, and `POST /profile/project/add`. There are zero DELETE or PUT endpoints. There is no authentication on any of these. There is no HTML form anywhere in the templates that targets these endpoints. The `Skill` and `Project` models both have `id` primary keys suitable for per-row operations, but no routes use them.
-
-A senior engineer would recognize this is a single-owner site (the singleton `Profile.query.first()` pattern makes multi-user impossible) and build a simple `/admin` section rather than a full CMS. The minimum viable surface: a protected dashboard at `/admin` that shows the current profile and lets you edit it via an HTML form; a skills manager where you can see all skills and delete individual ones by ID; a projects manager with edit and delete per project. Protection should be a simple token or password check consistent with whatever auth approach was decided for the write API — not a full session system.
-
-The engineer should also add the missing `DELETE /profile/skill/<id>` and `DELETE /profile/project/<id>` API endpoints, since a browser admin UI and a JSON API that both support delete is better than neither. They should note that the `add_skill` route currently has no deduplication guard — hitting "add" twice creates two identical rows — and the admin UI is the right place to surface and prevent that. All admin routes should be registered on a separate blueprint with a clear prefix, not mixed into `main_bp`.
+A senior engineer would have added a `ContactMessage` model with fields for sender name, email, message body, `submitted_at` timestamp, and a boolean `is_read` flag — with no foreign key, since there is no user account system in this application. The contact POST route in `routes.py` currently calls `mail.send(msg)` inside the handler with no try/except and no database write; the fix is to write the `ContactMessage` row first, commit it, and only then attempt mail delivery in a try/except that logs failure and optionally sets a separate `email_delivered` boolean on the row — never surfacing the SMTP error to the submitter as a failure since the message is already safely stored. The admin blueprint would get a `/admin/contacts` list route showing all submissions sorted newest-first, with unread count surfaced in the dashboard stats cards that already exist, and a detail view that marks the message `is_read = True` when opened. For spam mitigation, a honeypot field — a hidden `<input>` that bots fill but humans leave blank — would be added to the contact form and checked in the POST handler; a submission with the honeypot populated gets silently discarded with a 200 response so the bot learns nothing. The engineer would also note that the form has no CSRF protection, that adding Flask-WTF is the correct fix for that, and would flag it explicitly rather than leaving it undocumented. A `__repr__` and `to_dict()` on the model would keep it consistent with how existing models in the codebase are structured.
 
 ---
 
@@ -56,44 +60,52 @@ The engineer should also add the missing `DELETE /profile/skill/<id>` and `DELET
 
 **Task Type:** Feature Enhancement / Extension
 
-**Gist:** The site has no SEO metadata, no Open Graph tags, and no per-page descriptions — every page looks identical to search engines and social media platforms, which is a significant gap for a design agency whose primary channel is inbound discovery.
+**Gist:** The app already has a working file upload pipeline for learning content (PDFs, slide decks, documents), but profile photos and project images can only be set by pasting an external URL — the most visible parts of the site are entirely dependent on third-party image hosting.
+
+---
 
 **Turn 1**
 
-I shared the site link in a few places and noticed that when it gets pasted into Slack, LinkedIn, or a text message, the preview is completely generic — just the domain name, no image, no description, nothing that communicates what the business does. I checked search results and the same problem shows up there: every page is indexed with the same title and no description snippet.
+I've been trying to update my profile photo and add proper images for a couple of project entries, and the experience is really awkward. The system expects me to paste in a URL — which means I have to upload the image somewhere else first, get a public link, and then come back and paste it. If that external host goes down or changes the URL, the image just breaks with no warning. It also means we're dependent on third-party hosting for some of the most visible parts of the site.
 
-This is a serious problem for a design agency. The entire growth model depends on word-of-mouth and online discovery. When someone shares a link to the pricing page or the services page, the card preview that appears should tell them something useful — what Visionexa does, what the page is about, and ideally show a visual. Right now it shows nothing. The site is effectively invisible on social media regardless of how polished it looks when someone actually visits.
+What's frustrating is that the site already knows how to handle file uploads. If I go into the learning content section and add a PDF or a slide deck, there's a proper file upload input, the file gets stored somewhere on the server, and it works. That mechanism exists. It just wasn't wired up for profile images or project images, which are honestly more important.
 
-Beyond social sharing, there's no structure that tells search engines how to prioritize or understand the pages. Services, pricing, and contact are all treated identically in terms of metadata. I'd want each page to have a relevant description and title that fits the content on it, not a single fallback that covers every page the same way.
+I'd like the admin forms for editing the profile and managing projects to support direct image uploads — choose a file, it gets stored, the right URL gets saved. The URL field could stay as a fallback if someone wants to link to an external image, but the primary flow should be uploading from disk. Reasonable file type restrictions and size limits should apply. When an image already exists for a record, the form should show what's currently set so you're not editing blind.
+
+There's also the stale file problem — if I replace a project's image with a new one, the old file just sits on disk with nothing pointing to it. I don't want the uploads directory to quietly become a junk drawer over time.
+
+---
 
 **What a senior engineer should have done:**
 
-`base.html` contains `<meta charset="UTF-8">` and `<meta name="viewport">` — nothing else in the `<head>` beyond the font and CSS links. There is no `<meta name="description">`, no Open Graph block (`og:title`, `og:description`, `og:image`, `og:url`, `og:type`), no Twitter card tags, and no canonical `<link>`. Every page's `{% block title %}` produces a single generic string with no per-page variation beyond the page name prefix.
-
-A senior engineer would add a metadata block system to `base.html` using Jinja2 `{% block %}` tags: a `meta_description` block with a site-level default, and an `og_*` block set that each template can override. The implementation requires: a `{% block meta %}` in `<head>` that renders description, OG, and Twitter card tags using overridable block values; each page template sets a meaningful `meta_description` and `og_description` that reflects the actual page content; `og:image` points to a static asset (logo or default brand image) at minimum, with per-page override capability for project pages; `og:url` uses `request.url` to set the canonical URL dynamically.
-
-The engineer should also note that `content.yaml` already has per-page headline and description strings for services, pricing, highlights, and commitments — those are the right source for `og:description` on each inner page rather than hardcoded strings in templates. The `contact.headline` and `contact.description` fields from YAML are passed to the contact template via context processor and should feed the contact page's meta description. This avoids duplicating copy between the visual content and the metadata.
+A senior engineer would have recognized that `_save_file()` already exists in `routes.py` — it accepts a file object from `request.files`, validates the extension against `ALLOWED_EXTENSIONS`, generates a `uuid4`-prefixed safe filename via Werkzeug's `secure_filename`, and writes to `app/static/uploads/`. The gap is that this helper was only wired up for `Content` items and was never connected to the profile or project admin forms. The fix has two parts: extend `ALLOWED_EXTENSIONS` in `config.py` to include image types (`jpg`, `jpeg`, `png`, `gif`, `webp`) and create a dedicated `images/` subdirectory under `uploads/` for profile and project assets to keep them separate from PDF/document uploads. The admin `edit_profile` form would gain a file input for `profile_image`, and the POST handler would check `request.files.get('profile_image')` first — if present and valid, call `_save_file()` and store the returned path; fall back to the URL text field only if no file was submitted. The same pattern applies to the add and edit project forms. For stale file cleanup: before overwriting an existing image, check whether the current stored value starts with `/static/uploads/` (indicating it is a locally stored file, not an external URL); if so, call `os.remove()` on the old path wrapped in a `try/except` to handle already-missing files gracefully. The engineer would also note that `app/static/uploads/` should appear in `.gitignore` since user-uploaded binary files do not belong in version control, and flag that the current `add_project` API endpoint never reads `image_url` from the request body despite it existing on the model — that bug should be fixed in the same pass rather than left as a silent data gap.
 
 ---
 
 ## Task 4
 
-**Task Type:** New Feature
+**Task Type:** Debugging a tricky issue / Feature Enhancement / Extension
 
-**Gist:** Profile and project images are stored as plain URL strings in the database, but there is no way to actually upload an image through the site — leaving the homepage displaying a generic text placeholder where a professional photo should be, which undermines the credibility of a design agency.
+**Gist:** The learning portal has scheduling metadata and a published/draft toggle but enforces neither — scheduled sessions go live the moment you toggle them active, the whole content list loads at once with no pagination, and the date formatting code silently crashes on Windows.
+
+---
 
 **Turn 1**
 
-The homepage has a big placeholder where my profile photo should be. It says "Visionexa Studio" in a box. I know the site stores an image URL in the database, but I've never been able to get an actual image to appear there because there's no way to upload one. I tried setting the URL to a path on the server, but that doesn't work because there's no upload endpoint — there's nowhere to actually send the file.
+The learn section is getting harder to manage as we add more content to it. A few things are broken or not working the way I intended them to.
 
-The same problem exists for projects. The data model clearly expects each project to have an image — probably a screenshot or mockup — but I've never been able to attach one to any project because, again, there's no upload mechanism. I've been pasting in external image URLs as a workaround, but I don't want to depend on third-party image hosts for a portfolio that's supposed to represent my work.
+The biggest one: when I schedule a live session for next week and mark it as active, it shows up on the portal immediately. The whole point of the scheduled datetime field was so that something could be staged in advance — a session I'm setting up shouldn't be browsable by learners until it's actually happening or at least close to it. Right now that datetime field is purely decorative, it just changes what the card displays, it doesn't affect whether the item shows up at all.
 
-For a design studio, having a blank image slot on the homepage is embarrassing. Clients land there, see a gray rectangle, and the first impression of a studio that's supposed to be visually sophisticated is... a placeholder. I need to be able to upload images and have them show up on the site. I'm not trying to build an Instagram — just a profile photo and optionally a thumbnail per project.
+Related to that: I've had a few reports from people on Windows machines where certain content cards display incorrectly or cause page errors. I haven't been able to nail it down, but it seems tied to how dates get formatted somewhere in the page — not all content, specifically things that have a scheduled time set. It's not taking down the whole page but something is clearly wrong with how the scheduled time renders on those cards on Windows.
+
+On the volume side, we're approaching sixty or seventy content items across all the courses and types. Right now the page loads all of them at once. That's already slow and it'll get worse. The filter tabs help but they're client-side once everything is loaded — we're still hitting the database for everything up front. We need some kind of server-side approach to keep this from getting unmanageable.
+
+I want the scheduling to actually work — if something has a future scheduled time, don't show it yet. If it's a live session that's already ended, show it but mark it as past rather than showing a dead "Join session" button. And the date rendering needs to work correctly on every platform.
+
+---
 
 **What a senior engineer should have done:**
 
-`Profile.profile_image_url` and `Project.image_url` are both `db.Column(db.String(500))` — plain text fields that store a URL string. The `add_profile` route accepts `profile_image_url` via JSON but only stores whatever string is passed. The `add_project` route doesn't even read `image_url` from the request body — it's accepted by the model but never populated by the API. The homepage template renders `<img src="{{ profile.profile_image_url }}">` and falls back to a placeholder div if the field is empty.
+A senior engineer would have started with the Windows datetime crash: `learn/index.html` calls `.strftime('%A, %B %d at %-I:%M %p')` on `scheduled_at`, where `%-I` (no-padding 12-hour hour) is a Linux-only format directive that raises `ValueError` on Windows. The correct fix is to move all datetime formatting out of the Jinja2 template and into a Python function registered as a template filter via `app.jinja_env.filters['format_schedule']`; the function uses `%I` (zero-padded) and strips the leading zero with `lstrip('0')`, which is portable across platforms. Next, scheduling enforcement: the `/learn/` route currently queries `Content.query.filter_by(is_active=True)`; it should be extended to also require `(Content.scheduled_at == None) | (Content.scheduled_at <= datetime.utcnow())`, so future-dated items are withheld regardless of their active flag. Live sessions (`content_type == 'meet'`) with a `scheduled_at` that has already passed should be annotated in template context as ended and rendered with a "Session ended" state in place of the "Join session" CTA, since the existing button points to a dead meeting link. For pagination, the route would accept a `page` query param, use SQLAlchemy's `paginate(page=page, per_page=12)`, and pass the pagination object to the template; the filter tab links would carry both the active `type` and `course` params alongside `page=1` on tab change so filters and pagination compose correctly. The engineer would also flag that the existing client-side filter JavaScript becomes partially redundant once server-side filtering is in place — leaving both active creates inconsistent behavior — and would recommend converting the tabs to anchor links with query params rather than leaving contradictory UI logic silently in place.
 
-A senior engineer would implement file upload using Flask's built-in `request.files` handling and Werkzeug's `secure_filename`. The upload surface needs: a `POST /admin/upload` endpoint that accepts a multipart form file, validates the extension (jpg, png, webp only), generates a unique filename using `uuid4`, saves to `app/static/uploads/`, and returns the relative URL; the `add_profile` and `add_project` routes updated to accept a file upload instead of or in addition to a URL string; an `uploads/` directory created and added to `.gitignore` (user uploads don't belong in version control).
-
-The engineer should also set a file size limit — Flask's `MAX_CONTENT_LENGTH` config key — to prevent large uploads from buffering into memory. The `instance/` directory is not the right place for uploads since it's outside the static file serving path; `app/static/uploads/` is correct. They should handle the case where an existing profile image is replaced: the old file should be deleted from disk to prevent unbounded growth of the uploads directory. The `Project.image_url` field not being populated by `add_project` is a separate bug that should be fixed in the same pass.
+---

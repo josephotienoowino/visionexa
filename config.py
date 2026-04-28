@@ -23,7 +23,8 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     UPLOAD_FOLDER = os.path.join(_PROJECT_ROOT, 'app', 'static', 'uploads')
     MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32 MB
-    ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'}
+    ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf',
+                          'jpg', 'jpeg', 'png', 'gif', 'webp'}
 
 class DevelopmentConfig(Config):
     """Development configuration"""
