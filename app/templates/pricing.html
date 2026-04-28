@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Course Pricing — Visionexa Training School{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">Transparent pricing</span>
+        <h1 class="gradient-text">Invest in skills that pay back.</h1>
+        <p>Simple, fixed pricing per course — no hidden fees, no subscriptions. Choose online, in-person, or bundle both for maximum value.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="grid pricing-grid">
+            {% for plan in pricing_plans %}
+            <article class="pricing-card fade-up {% if plan.popular %}popular{% endif %}">
+                {% if plan.popular %}
+                <div class="popular-badge">
+                    <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.873 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+                    Most popular
+                </div>
+                {% endif %}
+                <h3>{{ plan.name }}</h3>
+                <p class="price">{{ plan.price }}</p>
+                <p>{{ plan.description }}</p>
+                <ul class="feature-list">
+                    {% for feature in plan.features %}
+                    <li>{{ feature }}</li>
+                    {% endfor %}
+                </ul>
+                <a href="{{ url_for('main.contact') }}" class="button {% if plan.popular %}button-primary{% else %}button-secondary{% endif %}">Book this plan</a>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="pricing-note fade-up">
+            <p>Prices are per course. Group discounts available for 3 or more students booking together — <a href="{{ url_for('main.contact') }}">ask us about group rates</a>.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section section-cta">
+    <div class="container">
+        <div class="cta-panel fade-up">
+            <div>
+                <span class="eyebrow">Custom groups</span>
+                <h2>Training a team or organisation?</h2>
+                <p>We offer group packages and corporate training programs. Contact us to discuss a tailored schedule and pricing for your team.</p>
+            </div>
+            <a href="{{ url_for('main.contact') }}" class="button button-primary">Get a quote</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

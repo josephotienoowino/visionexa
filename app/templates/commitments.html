@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Our Teaching Commitments — Visionexa{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">How we teach</span>
+        <h1 class="gradient-text">Our promise to every student.</h1>
+        <p>These are the standards we hold every instructor and every course to — not aspirations, actual working agreements.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="grid commitments-grid">
+            {% for commitment in commitments %}
+            <article class="card fade-up">
+                <div class="card-icon">
+                    {% if loop.index == 1 %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    {% elif loop.index == 2 %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    {% endif %}
+                </div>
+                <h2>{{ commitment.title }}</h2>
+                <p>{{ commitment.description }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section-cta">
+    <div class="container">
+        <div class="cta-panel fade-up">
+            <div>
+                <span class="eyebrow">Hold us to this</span>
+                <h2>Your success is our track record.</h2>
+                <p>Every commitment above applies from your first class to your last. Get in touch and let's get you started.</p>
+            </div>
+            <a href="{{ url_for('main.contact') }}" class="button button-primary">Enrol now</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

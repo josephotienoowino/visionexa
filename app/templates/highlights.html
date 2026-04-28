@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Why Choose Visionexa Training School{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">Why Visionexa</span>
+        <h1 class="gradient-text">Training that sticks — and pays off.</h1>
+        <p>We've helped hundreds of students gain real skills, land new jobs, and start trading profitably. Here's what makes us different.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="stats-bar fade-up" style="margin-bottom: 4rem;">
+            {% for stat in stats %}
+            <div class="stat-item">
+                <div class="stat-value">{{ stat.value }}</div>
+                <div class="stat-label">{{ stat.label }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="grid highlights-grid">
+            {% for highlight in highlights %}
+            <article class="card fade-up">
+                <div class="card-icon">
+                    {% if loop.index == 1 %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                    {% elif loop.index == 2 %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    {% endif %}
+                </div>
+                <h2>{{ highlight.title }}</h2>
+                <p>{{ highlight.description }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section-cta">
+    <div class="container">
+        <div class="cta-panel fade-up">
+            <div>
+                <span class="eyebrow">500+ students can't be wrong</span>
+                <h2>Come see for yourself.</h2>
+                <p>Book a free introductory session — online or at our training center — and decide if Visionexa is right for you.</p>
+            </div>
+            <a href="{{ url_for('main.contact') }}" class="button button-primary">Book a free intro</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

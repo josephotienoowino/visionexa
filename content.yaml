@@ -1,0 +1,119 @@
+services:
+  - title: Computer Training
+    description: Foundation courses covering office productivity, internet skills, and essential software for today's workplace.
+    detail: Hands-on training for Microsoft Office, Google Workspace, cybersecurity basics, and everyday digital tools — built for beginners and career changers.
+    image: https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=560&auto=format&fit=crop&q=80
+    image_alt: Person working confidently on a laptop at a clean workspace
+    modules:
+      - Microsoft Office & Google Workspace
+      - Internet navigation and digital safety
+      - File management and cloud storage
+      - Professional email and communication
+      - Cybersecurity fundamentals
+    outcomes:
+      - Land an office or administrative role
+      - Work confidently with any digital tool
+
+  - title: AI & Tech Courses
+    description: Practical AI training covering tools like ChatGPT, automation platforms, and prompt engineering for professionals.
+    detail: Learn how to integrate AI into your workflow, build automations, and stay ahead in a rapidly changing tech landscape — no coding background needed.
+    image: https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=560&auto=format&fit=crop&q=80
+    image_alt: Abstract visualization of an AI neural network
+    modules:
+      - ChatGPT and large language models
+      - Prompt engineering and AI workflows
+      - Automation with Zapier and Make
+      - AI tools for content and productivity
+      - Data analysis with AI assistance
+    outcomes:
+      - Automate repetitive tasks and save hours weekly
+      - Stand out as an AI-fluent professional
+
+  - title: Forex Trading
+    description: Structured forex education from market fundamentals through advanced technical analysis and live trading strategies.
+    detail: Covers charts, indicators, risk management, and trading psychology — taught by practitioners with real market experience.
+    image: https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=560&auto=format&fit=crop&q=80
+    image_alt: Live forex trading charts on a monitor
+    modules:
+      - Market structure and currency pairs
+      - Technical analysis and chart reading
+      - Risk management and position sizing
+      - Trading psychology and discipline
+      - Live trading sessions and strategy review
+    outcomes:
+      - Execute trades with a structured strategy
+      - Manage risk the way professionals do
+
+pricing_plans:
+  - name: Online
+    price: "$99"
+    description: Live-streamed and recorded sessions you can attend from anywhere, with full course materials included.
+    popular: false
+    features:
+      - Live session access
+      - Recorded replays (lifetime)
+      - Course workbook & resources
+      - Community Q&A access
+      - Certificate of completion
+  - name: Physical
+    price: "$199"
+    description: In-person classroom experience at our training center with direct instructor support.
+    popular: true
+    features:
+      - Small group classroom setting
+      - Direct instructor mentorship
+      - Lab computer provided
+      - Printed course materials
+      - Certificate of completion
+      - 30-day post-course support
+  - name: Bundle
+    price: "$299"
+    description: Enroll in two or more courses with full access to both online and physical class tracks.
+    popular: false
+    features:
+      - All courses included
+      - Online + physical access
+      - Priority booking
+      - 1-on-1 coaching session
+      - Lifetime material access
+      - Certificate per course
+
+highlights:
+  - title: Practical, job-ready skills
+    description: Every course is built around real-world tasks — not theory. You leave knowing exactly how to apply what you've learned on the job.
+  - title: Flexible learning formats
+    description: Attend physically at our training center or join live online — the same quality content, structured around your schedule.
+  - title: Expert instructors
+    description: Learn from practitioners who actively use these tools professionally, not teachers reading from a slide deck.
+
+commitments:
+  - title: Small class sizes
+    description: We cap enrollment to keep every session personal, interactive, and focused on your individual progress.
+  - title: Beginner-friendly
+    description: No prior experience required for any course. We meet you where you are and build your confidence step by step.
+  - title: Ongoing support
+    description: Learning doesn't stop when class ends — our community and instructors stay available after you graduate.
+
+stats:
+  - value: "500+"
+    label: Students trained
+  - value: "12+"
+    label: Courses offered
+  - value: "98%"
+    label: Completion rate
+  - value: "4.9"
+    label: Average rating
+
+contact:
+  headline: Ready to start learning?
+  description: Book a class online, ask about scheduling, or come visit our training center in person. We're happy to help you find the right course.
+
+contact_info:
+  email: hello@visionexa.com
+  phone: "+1 (234) 567-890"
+  address: "123 Vision Street, Suite 400"
+  social:
+    - name: LinkedIn
+      url: https://linkedin.com/in/visionexa
+    - name: Twitter
+      url: https://twitter.com/visionexa

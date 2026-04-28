@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}About Visionexa Training School{% endblock %}
+
+{% block content %}
+
+<section class="section about-section">
+    <div class="container about-grid">
+        <div class="about-copy">
+            <span class="eyebrow">About Visionexa</span>
+            <h1>We train the skills that power modern careers and financial independence.</h1>
+            {% if profile and profile.bio %}
+            <p>{{ profile.bio }}</p>
+            {% else %}
+            <p>Visionexa is a professional training school offering practical, hands-on courses in computer fundamentals, artificial intelligence tools, and forex trading. We serve beginners, career changers, and professionals looking to add high-demand skills to their toolkit.</p>
+            <p style="margin-top: 1rem;">Our classes are available both online and at our physical training center — designed to fit your schedule without compromising on quality or instructor access.</p>
+            {% endif %}
+        </div>
+        <div class="about-panels">
+            <article class="detail-card">
+                <h3>Hands-on learning</h3>
+                <p>Every session is built around practice, not passive listening. You work with the actual tools and markets from day one.</p>
+            </article>
+            <article class="detail-card">
+                <h3>Online &amp; in-person</h3>
+                <p>Attend live at our training center or join remotely — both formats deliver the same curriculum and instructor access.</p>
+            </article>
+            <article class="detail-card">
+                <h3>Certified outcomes</h3>
+                <p>Complete any course and receive a certificate of completion recognised by employers and professional networks.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="stats-bar fade-up">
+            {% for stat in stats %}
+            <div class="stat-item">
+                <div class="stat-value">{{ stat.value }}</div>
+                <div class="stat-label">{{ stat.label }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section-cta">
+    <div class="container">
+        <div class="cta-panel fade-up">
+            <div>
+                <span class="eyebrow">Join us</span>
+                <h2>Ready to level up? We'll meet you where you are.</h2>
+                <p>No prior experience needed for any of our courses. Get in touch and we'll recommend the right starting point for your goals.</p>
+            </div>
+            <a href="{{ url_for('main.contact') }}" class="button button-primary">Book a Class</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

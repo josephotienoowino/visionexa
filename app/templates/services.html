@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Courses — Visionexa Training School{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">What we teach</span>
+        <h1 class="gradient-text">Courses built for the real world.</h1>
+        <p>From computer basics to advanced AI tools and live forex trading — structured learning for every level, online and in-person.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        {% for service in services %}
+        <article class="service-detail-row fade-up {% if not loop.first %}service-detail-row--border{% endif %}">
+            <div class="service-detail-image">
+                {% if service.image %}
+                <img src="{{ service.image }}" alt="{{ service.image_alt if service.image_alt else service.title }}" loading="lazy">
+                {% else %}
+                <div class="service-image-placeholder"></div>
+                {% endif %}
+            </div>
+            <div class="service-detail-content">
+                <div class="service-detail-header">
+                    <div class="card-icon">
+                        {% if loop.index == 1 %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        {% elif loop.index == 2 %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><circle cx="18" cy="6" r="4"/><path d="M12 8v4l3 3"/></svg>
+                        {% else %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                        {% endif %}
+                    </div>
+                    <h2>{{ service.title }}</h2>
+                </div>
+                <p class="service-detail-desc">{{ service.detail if service.detail else service.description }}</p>
+
+                {% if service.modules %}
+                <div class="service-modules">
+                    <p class="service-modules-label">What you will cover</p>
+                    <ul class="module-list">
+                        {% for module in service.modules %}
+                        <li>{{ module }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if service.outcomes %}
+                <div class="service-outcomes">
+                    <p class="service-modules-label">By the end of this course</p>
+                    <div class="outcome-tags">
+                        {% for outcome in service.outcomes %}
+                        <span class="outcome-tag">{{ outcome }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <a href="{{ url_for('main.contact') }}" class="button button-primary" style="margin-top: 2rem;">Enrol in this course</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-heading fade-up">
+            <span class="eyebrow">Delivery formats</span>
+            <h2>Online or in-person — your choice.</h2>
+            <p>Every course runs on both tracks simultaneously. Switch between them at any point, or do both.</p>
+        </div>
+        <div class="grid modes-grid fade-up">
+            <div class="mode-card">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                </div>
+                <h3>Online Classes</h3>
+                <p>Live-streamed sessions with recorded replays, course materials, and community Q&amp;A. Learn from anywhere in the world.</p>
+                <a href="{{ url_for('main.pricing') }}" class="mode-link">From $99 &rarr;</a>
+            </div>
+            <div class="mode-card">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <h3>Physical Classes</h3>
+                <p>Small-group classroom at our training center. Lab computers provided, printed materials, and direct instructor access throughout.</p>
+                <a href="{{ url_for('main.pricing') }}" class="mode-link">From $199 &rarr;</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-cta">
+    <div class="container">
+        <div class="cta-panel fade-up">
+            <div>
+                <span class="eyebrow">Not sure where to start?</span>
+                <h2>We'll help you pick the right course.</h2>
+                <p>Get in touch and tell us your goals — we'll recommend the best starting point and format for you.</p>
+            </div>
+            <a href="{{ url_for('main.contact') }}" class="button button-primary">Talk to us</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

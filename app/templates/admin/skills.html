@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Skills - Visionexa Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .skills-list {
+            margin: 2rem 0;
+        }
+        .skill-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .skill-info h3 {
+            margin: 0;
+            color: var(--color-primary);
+        }
+        .skill-info p {
+            margin: 0.25rem 0 0 0;
+            color: #666;
+        }
+        .skill-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .add-skill {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="container nav-inner">
+            <a href="{{ url_for('main.index') }}" class="nav-brand">Visionexa</a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Manage Skills</h1>
+
+        <div class="add-skill">
+            <a href="{{ url_for('admin.add_skill') }}" class="btn btn-primary">Add New Skill</a>
+        </div>
+
+        <div class="skills-list">
+            {% for skill in skills %}
+            <div class="skill-item">
+                <div class="skill-info">
+                    <h3>{{ skill.name }}</h3>
+                    <p>Level: {{ skill.level }}</p>
+                </div>
+                <div class="skill-actions">
+                    <a href="{{ url_for('admin.edit_skill', skill_id=skill.id) }}" class="btn btn-secondary">Edit</a>
+                    <form method="POST" action="{{ url_for('admin.delete_skill', skill_id=skill.id) }}" onsubmit="return confirm('Are you sure you want to delete this skill?')">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not skills %}
+            <p>No skills added yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
