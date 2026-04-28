@@ -442,6 +442,15 @@ def add_content():
         return redir
     if request.method == 'POST':
         content_type = request.form.get('content_type', 'video')
+        
+        # Handle resource type selection for documents
+        if content_type == 'resources':
+            resource_type = request.form.get('resource_type', '').strip()
+            if not resource_type:
+                flash('Please select a document type.', 'error')
+                return redirect(url_for('admin.add_content'))
+            content_type = resource_type
+        
         url          = request.form.get('url', '').strip()
 
         # Handle file upload (overrides URL if a file is given)

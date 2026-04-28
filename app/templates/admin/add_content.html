@@ -44,43 +44,33 @@
                         <span>Upload a file or paste a link</span>
                     </span>
                 </label>
-                <label class="type-option" data-type="docx">
-                    <input type="radio" name="content_type" value="docx"
-                           {% if item and item.content_type == 'docx' %}checked{% endif %}>
+                <label class="type-option" data-type="resources">
+                    <input type="radio" name="content_type" value="resources"
+                           {% if item and item.content_type in ('docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf') %}checked{% endif %}>
                     <span class="type-option-inner">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8m8 4H8m4-8H8"/></svg>
-                        <strong>Word document</strong>
-                        <span>Upload .docx or .doc file</span>
-                    </span>
-                </label>
-                <label class="type-option" data-type="pptx">
-                    <input type="radio" name="content_type" value="pptx"
-                           {% if item and item.content_type == 'pptx' %}checked{% endif %}>
-                    <span class="type-option-inner">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="12" width="8" height="6"/><path d="M10 16h4"/></svg>
-                        <strong>PowerPoint</strong>
-                        <span>Upload .pptx or .ppt file</span>
-                    </span>
-                </label>
-                <label class="type-option" data-type="xlsx">
-                    <input type="radio" name="content_type" value="xlsx"
-                           {% if item and item.content_type == 'xlsx' %}checked{% endif %}>
-                    <span class="type-option-inner">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2l2 3 2-3h2"/><path d="M8 17h2l2-3 2 3h2"/></svg>
-                        <strong>Excel spreadsheet</strong>
-                        <span>Upload .xlsx or .xls file</span>
-                    </span>
-                </label>
-                <label class="type-option" data-type="txt">
-                    <input type="radio" name="content_type" value="txt"
-                           {% if item and item.content_type == 'txt' %}checked{% endif %}>
-                    <span class="type-option-inner">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-                        <strong>Text file</strong>
-                        <span>Upload .txt or .rtf file</span>
+                        <strong>Document resources</strong>
+                        <span>Upload Word, Excel, PowerPoint, or text files</span>
                     </span>
                 </label>
             </div>
+        </div>
+
+        <!-- Resource type selector — shown only when type=resources -->
+        <div class="form-group" id="resource-type-group" style="display:none;">
+            <label class="form-group label" for="resource_type">Document type <span class="required">*</span></label>
+            <select id="resource_type" name="resource_type" class="form-control">
+                <option value="">Select document type...</option>
+                <option value="docx" {% if item and item.content_type == 'docx' %}selected{% endif %}>Word Document (.docx)</option>
+                <option value="doc" {% if item and item.content_type == 'doc' %}selected{% endif %}>Word Document (.doc)</option>
+                <option value="pptx" {% if item and item.content_type == 'pptx' %}selected{% endif %}>PowerPoint (.pptx)</option>
+                <option value="ppt" {% if item and item.content_type == 'ppt' %}selected{% endif %}>PowerPoint (.ppt)</option>
+                <option value="xlsx" {% if item and item.content_type == 'xlsx' %}selected{% endif %}>Excel Spreadsheet (.xlsx)</option>
+                <option value="xls" {% if item and item.content_type == 'xls' %}selected{% endif %}>Excel Spreadsheet (.xls)</option>
+                <option value="txt" {% if item and item.content_type == 'txt' %}selected{% endif %}>Text File (.txt)</option>
+                <option value="rtf" {% if item and item.content_type == 'rtf' %}selected{% endif %}>Rich Text Format (.rtf)</option>
+            </select>
+            <p class="form-hint">Choose the type of document you're uploading.</p>
         </div>
 
         <!-- Title -->
@@ -167,26 +157,20 @@
 {% block extra_js %}
 <script>
 (function () {
-    const radios      = document.querySelectorAll('input[name="content_type"]');
-    const urlGroup    = document.getElementById('url-group');
-    const uploadGroup = document.getElementById('upload-group');
-    const schedGroup  = document.getElementById('schedule-group');
-    const urlLabel    = document.getElementById('url-label');
-    const urlHint     = document.getElementById('url-hint');
-    const urlInput    = document.getElementById('url');
+    const radios            = document.querySelectorAll('input[name="content_type"]');
+    const urlGroup          = document.getElementById('url-group');
+    const uploadGroup       = document.getElementById('upload-group');
+    const resourceTypeGroup = document.getElementById('resource-type-group');
+    const schedGroup        = document.getElementById('schedule-group');
+    const urlLabel          = document.getElementById('url-label');
+    const urlHint           = document.getElementById('url-hint');
+    const urlInput          = document.getElementById('url');
 
     const hints = {
-        video: { label: 'Video URL', hint: 'Paste a YouTube, Vimeo, or any video link.',        placeholder: 'https://youtube.com/watch?v=…' },
-        meet:  { label: 'Meeting link', hint: 'Paste the Google Meet or Zoom invite URL.',       placeholder: 'https://meet.google.com/…' },
-        pdf:   { label: 'PDF link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        docx:  { label: 'Document link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        doc:   { label: 'Document link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        pptx:  { label: 'Presentation link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        ppt:   { label: 'Presentation link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        xlsx:  { label: 'Spreadsheet link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        xls:   { label: 'Spreadsheet link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        txt:   { label: 'Text file link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
-        rtf:   { label: 'Text file link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        video:     { label: 'Video URL', hint: 'Paste a YouTube, Vimeo, or any video link.',        placeholder: 'https://youtube.com/watch?v=…' },
+        meet:      { label: 'Meeting link', hint: 'Paste the Google Meet or Zoom invite URL.',       placeholder: 'https://meet.google.com/…' },
+        pdf:       { label: 'PDF link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
+        resources: { label: 'Document link (optional)', hint: 'Paste a Google Drive or Dropbox link, or upload a file below.', placeholder: 'https://drive.google.com/…' },
     };
 
     function update() {
@@ -197,8 +181,9 @@
             urlHint.textContent       = h.hint;
             urlInput.placeholder      = h.placeholder;
         }
-        uploadGroup.style.display = ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'rtf'].includes(type) ? '' : 'none';
-        schedGroup.style.display  = type === 'meet' ? '' : 'none';
+        uploadGroup.style.display       = ['pdf', 'resources'].includes(type) ? '' : 'none';
+        resourceTypeGroup.style.display = type === 'resources' ? '' : 'none';
+        schedGroup.style.display        = type === 'meet' ? '' : 'none';
     }
 
     radios.forEach(r => r.addEventListener('change', update));
