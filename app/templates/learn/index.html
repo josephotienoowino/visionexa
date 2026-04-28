@@ -6,6 +6,32 @@
 
 {% block content %}
 
+{% macro video_embed(url) %}
+    {% if 'youtu.be/' in url or 'youtube.com/watch' in url or 'youtube.com/shorts' in url %}
+        {% if 'youtu.be/' in url %}
+            {% set video_id = url.split('youtu.be/')[-1].split('?')[0].split('&')[0] %}
+        {% elif 'youtube.com/watch' in url %}
+            {% set video_id = url.split('v=')[-1].split('&')[0] %}
+        {% else %}
+            {% set video_id = url.split('/shorts/')[-1].split('?')[0].split('&')[0] %}
+        {% endif %}
+        <iframe class="learn-preview-frame" src="https://www.youtube.com/embed/{{ video_id }}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    {% elif 'vimeo.com/' in url %}
+        {% set video_id = url.split('vimeo.com/')[-1].split('?')[0].split('&')[0] %}
+        <iframe class="learn-preview-frame" src="https://player.vimeo.com/video/{{ video_id }}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
+    {% elif url.lower().endswith('.mp4') %}
+        <video class="learn-preview-frame" controls src="{{ url }}"></video>
+    {% else %}
+        {# None: no inline preview available for this provider #}
+    {% endif %}
+{% endmacro %}
+
+{% macro pdf_preview(url) %}
+    {% if url %}
+        <iframe class="learn-preview-frame" src="{{ url }}"></iframe>
+    {% endif %}
+{% endmacro %}
+
 <section class="page-hero learn-hero">
     <div class="container">
         <span class="eyebrow">Learner Portal</span>
@@ -105,6 +131,16 @@
 
                     {% if item.description %}
                     <p class="learn-card-desc">{{ item.description }}</p>
+                    {% endif %}
+
+                    {% if item.content_type == 'video' and item.url %}
+                    <div class="learn-preview">
+                        {{ video_embed(item.url) }}
+                    </div>
+                    {% elif item.content_type == 'pdf' and item.url %}
+                    <div class="learn-preview">
+                        {{ pdf_preview(item.url) }}
+                    </div>
                     {% endif %}
 
                     {% if item.scheduled_at %}
